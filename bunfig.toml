@@ -1,0 +1,15 @@
+[test]
+# Enable coverage reporting
+coverage = false
+
+# Test timeout in milliseconds
+timeout = 10000
+
+# Environment variables for tests
+env = [
+  "NODE_ENV=test",
+  "DATABASE_URL=postgresql://test:test@localhost:5432/test"
+]
+
+# Preload modules for tests
+preload = ["./src/lib/server/test/env-plugin.ts", "./src/lib/server/test/setup.ts"] 

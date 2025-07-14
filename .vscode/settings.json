@@ -1,0 +1,19 @@
+{
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "svelte"
+  ],
+  "jestrunner.jestCommand": "bun run test",
+  "jestrunner.debugOptions": {
+    "runtimeExecutable": "bun",
+    "runtimeArgs": [
+      "test",
+      "${fileBasename}",
+      "--runInBand",
+      "--no-cache",
+      "--watchAll=false",
+      "--color"
+    ]
+  },
+}
