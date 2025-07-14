@@ -6,21 +6,21 @@ import { DbService } from '../db/db.service';
 import * as schema from '../db/schema';
 
 export class TestDbService extends DbService {
-	constructor() {
-		const pglite = new PGlite();
-		const db = drizzle(pglite, { schema });
+  constructor() {
+    const pglite = new PGlite();
+    const db = drizzle(pglite, { schema });
 
-		super(db);
-	}
+    super(db);
+  }
 }
 
 export class TestLogger extends LogLayer {
-	constructor() {
-		super({
-			transport: new ConsoleTransport({
-				enabled: false,
-				logger: console
-			})
-		});
-	}
+  constructor() {
+    super({
+      transport: new ConsoleTransport({
+        enabled: false,
+        logger: console
+      })
+    });
+  }
 }

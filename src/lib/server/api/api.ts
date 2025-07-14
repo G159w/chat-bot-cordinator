@@ -13,8 +13,8 @@ import { UserRepository } from './user/user.repository';
 import { AuthGuard } from './utils/auth';
 
 const container = new Container().bind({
-	provide: DbService,
-	useClass: TestDbService
+  provide: DbService,
+  useClass: TestDbService
 });
 const apiController = container.get(ApiController);
 
@@ -24,8 +24,8 @@ console.time('✅ Migrated database');
 await migrate(db, { migrationsFolder: './drizzle' });
 const userRepository = container.get(UserRepository);
 await userRepository.db.insert(userTable).values({
-	id: 'test_user_id',
-	name: 'test_user'
+  id: 'test_user_id',
+  name: 'test_user'
 });
 console.timeEnd('✅ Migrated database');
 

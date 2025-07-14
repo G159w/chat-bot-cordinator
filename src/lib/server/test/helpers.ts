@@ -12,41 +12,41 @@ import { TestDbService, TestLogger } from './mock.service';
 
 // Mock the database module for testing
 export const createTestApp = async () => {
-	const container = new Container()
-		.bind({
-			provide: DbService,
-			useClass: TestDbService
-		})
-		.bind({
-			provide: Logger,
-			useClass: TestLogger
-		});
+  const container = new Container()
+    .bind({
+      provide: DbService,
+      useClass: TestDbService
+    })
+    .bind({
+      provide: Logger,
+      useClass: TestLogger
+    });
 
-	const dbService = container.get(DbService) as TestDbService;
-	const db = dbService.db as PgliteDatabase<typeof schema>;
+  const dbService = container.get(DbService) as TestDbService;
+  const db = dbService.db as PgliteDatabase<typeof schema>;
 
-	console.time('✅ Migrating database');
-	await migrate(db, { migrationsFolder: './drizzle' });
-	console.timeEnd('✅ Migrating database');
+  console.time('✅ Migrating database');
+  await migrate(db, { migrationsFolder: './drizzle' });
+  console.timeEnd('✅ Migrating database');
 
-	const apiController = container.get(ApiController);
+  const apiController = container.get(ApiController);
 
-	const baseApp = apiController.app;
+  const baseApp = apiController.app;
 
-	const apiClient = treaty(baseApp);
+  const apiClient = treaty(baseApp);
 
-	const factories = generateFactories(dbService);
+  const factories = generateFactories(dbService);
 
-	return { apiClient, container, dbService, ...factories };
+  return { apiClient, container, dbService, ...factories };
 };
 
 export type TestApi = Awaited<ReturnType<typeof createTestApp>>['apiClient'];
 
 // Helper to create authenticated requests
 export const createAuthenticatedRequest = ({ userToken }: { userToken: string }) => {
-	return {
-		headers: {
-			authorization: `Bearer ${userToken}`
-		}
-	};
+  return {
+    headers: {
+      authorization: `Bearer ${userToken}`
+    }
+  };
 };

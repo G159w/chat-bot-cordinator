@@ -7,110 +7,110 @@ import { and, eq } from 'drizzle-orm';
 
 @injectable()
 export class CrewRepository extends DbRepository {
-	constructor(dbService = inject(DbService)) {
-		super(dbService);
-	}
+  constructor(dbService = inject(DbService)) {
+    super(dbService);
+  }
 
-	async create(data: { description?: string; name: string; userId: string }): Promise<Crew> {
-		const [result] = await this.db.insert(crewTable).values(data).returning();
+  async create(data: { description?: string; name: string; userId: string }): Promise<Crew> {
+    const [result] = await this.db.insert(crewTable).values(data).returning();
 
-		return result;
-	}
+    return result;
+  }
 
-	async createWithAgents(data: {
-		agents: Omit<Agent, 'createdAt' | 'crewId' | 'id'>[];
-		description?: string;
-		name: string;
-		userId: string;
-	}): Promise<Crew> {
-		return this.db.transaction(async (tx) => {
-			const [crewResult] = await tx
-				.insert(crewTable)
-				.values({
-					description: data.description,
-					name: data.name,
-					userId: data.userId
-				})
-				.returning();
+  async createWithAgents(data: {
+    agents: Omit<Agent, 'createdAt' | 'crewId' | 'id'>[];
+    description?: string;
+    name: string;
+    userId: string;
+  }): Promise<Crew> {
+    return this.db.transaction(async (tx) => {
+      const [crewResult] = await tx
+        .insert(crewTable)
+        .values({
+          description: data.description,
+          name: data.name,
+          userId: data.userId
+        })
+        .returning();
 
-			if (data.agents.length > 0) {
-				await tx.insert(agentTable).values(
-					data.agents.map((agentData, index) => ({
-						...agentData,
-						crewId: crewResult.id,
-						order: index
-					}))
-				);
-			}
+      if (data.agents.length > 0) {
+        await tx.insert(agentTable).values(
+          data.agents.map((agentData, index) => ({
+            ...agentData,
+            crewId: crewResult.id,
+            order: index
+          }))
+        );
+      }
 
-			return crewResult;
-		});
-	}
+      return crewResult;
+    });
+  }
 
-	async delete(id: string, userId: string): Promise<boolean> {
-		const [result] = await this.db
-			.delete(crewTable)
-			.where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
-			.returning();
+  async delete(id: string, userId: string): Promise<boolean> {
+    const [result] = await this.db
+      .delete(crewTable)
+      .where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
+      .returning();
 
-		return !!result;
-	}
+    return !!result;
+  }
 
-	async findById(id: string, userId: string): Promise<Crew | null> {
-		const [result] = await this.db
-			.select()
-			.from(crewTable)
-			.where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
-			.limit(1);
+  async findById(id: string, userId: string): Promise<Crew | null> {
+    const [result] = await this.db
+      .select()
+      .from(crewTable)
+      .where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
+      .limit(1);
 
-		return result || null;
-	}
+    return result || null;
+  }
 
-	async findByUserId(userId: string): Promise<Crew[]> {
-		return this.db
-			.select()
-			.from(crewTable)
-			.where(eq(crewTable.userId, userId))
-			.orderBy(crewTable.createdAt);
-	}
+  async findByUserId(userId: string): Promise<Crew[]> {
+    return this.db
+      .select()
+      .from(crewTable)
+      .where(eq(crewTable.userId, userId))
+      .orderBy(crewTable.createdAt);
+  }
 
-	async getCrewWithAgents(
-		id: string,
-		userId: string
-	): Promise<null | {
-		agents: Agent[];
-		crew: Crew;
-	}> {
-		const crewResult = await this.findById(id, userId);
-		if (!crewResult) return null;
+  async getCrewWithAgents(
+    id: string,
+    userId: string
+  ): Promise<null | {
+    agents: Agent[];
+    crew: Crew;
+  }> {
+    const crewResult = await this.findById(id, userId);
+    if (!crewResult) return null;
 
-		const agents = await this.db
-			.select()
-			.from(agentTable)
-			.where(eq(agentTable.crewId, id))
-			.orderBy(agentTable.order);
+    const agents = await this.db
+      .select()
+      .from(agentTable)
+      .where(eq(agentTable.crewId, id))
+      .orderBy(agentTable.order);
 
-		return {
-			agents,
-			crew: crewResult
-		};
-	}
+    return {
+      agents,
+      crew: crewResult
+    };
+  }
 
-	async update(
-		id: string,
-		userId: string,
-		data: {
-			description?: string;
-			isActive?: boolean;
-			name?: string;
-		}
-	): Promise<Crew | null> {
-		const [result] = await this.db
-			.update(crewTable)
-			.set({ ...data, updatedAt: new Date() })
-			.where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
-			.returning();
+  async update(
+    id: string,
+    userId: string,
+    data: {
+      description?: string;
+      isActive?: boolean;
+      name?: string;
+    }
+  ): Promise<Crew | null> {
+    const [result] = await this.db
+      .update(crewTable)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
+      .returning();
 
-		return result || null;
-	}
+    return result || null;
+  }
 }
