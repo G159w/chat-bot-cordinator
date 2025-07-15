@@ -15,15 +15,17 @@ export abstract class DbRepository {
   }
 }
 
-export abstract class DbService {
-  db: PgliteDatabase<typeof schema> | PostgresJsDatabase<typeof schema>;
+export abstract class DbService<
+  T extends PgliteDatabase<typeof schema> | PostgresJsDatabase<typeof schema>
+> {
+  db: T;
 
-  constructor(db: PgliteDatabase<typeof schema> | PostgresJsDatabase<typeof schema>) {
+  constructor(db: T) {
     this.db = db;
   }
 }
 
-export class PgDbService extends DbService {
+export class PgDbService extends DbService<PostgresJsDatabase<typeof schema>> {
   constructor() {
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 

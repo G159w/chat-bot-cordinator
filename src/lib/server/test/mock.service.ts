@@ -1,11 +1,11 @@
 import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
+import { drizzle, PgliteDatabase } from 'drizzle-orm/pglite';
 import { ConsoleTransport, LogLayer } from 'loglayer';
 
 import { DbService } from '../db/db.service';
 import * as schema from '../db/schema';
 
-export class TestDbService extends DbService {
+export class TestDbService extends DbService<PgliteDatabase<typeof schema>> {
   constructor() {
     const pglite = new PGlite();
     const db = drizzle(pglite, { schema });

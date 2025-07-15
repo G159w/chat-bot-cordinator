@@ -1,12 +1,10 @@
 import { treaty } from '@elysiajs/eden';
 import { Container } from '@needle-di/core';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 
 import { ApiController } from '../api/api.controller';
 import { Logger } from '../api/logger';
 import { DbService } from '../db/db.service';
-import * as schema from '../db/schema';
 import { generateFactories } from './factory/generate-factories';
 import { TestDbService, TestLogger } from './mock.service';
 
@@ -23,7 +21,7 @@ export const createTestApp = async () => {
     });
 
   const dbService = container.get(DbService) as TestDbService;
-  const db = dbService.db as PgliteDatabase<typeof schema>;
+  const db = dbService.db;
 
   console.time('✅ Migrating database');
   await migrate(db, { migrationsFolder: './drizzle' });

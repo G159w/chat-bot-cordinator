@@ -204,8 +204,6 @@ describe('Agent Controller', () => {
         createAuthenticatedRequest({ userToken: 'test-user-123' })
       );
 
-      console.log(JSON.stringify(response, null, 2));
-
       expect(response.status).toBe(401);
     });
   });
