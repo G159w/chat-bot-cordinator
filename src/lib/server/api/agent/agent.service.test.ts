@@ -1,3 +1,5 @@
+import type { Agent } from '$lib/server/db/schema';
+
 import { testingModule } from '$lib/server/test/setup';
 import { describe, expect, it } from 'bun:test';
 
@@ -25,18 +27,19 @@ describe('AgentService', () => {
       };
 
       const result = await agentService.createAgent(agentData);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result.name).toBe(agentData.name);
-      expect(result.role).toBe(agentData.role);
-      expect(result.instructions).toBe(agentData.instructions);
-      expect(result.model).toBe(agentData.model);
-      expect(result.crewId).toBe(createdCrew.id);
-      expect(result.description).toBe(agentData.description);
-      expect(result.temperature).toBe(agentData.temperature);
-      expect(result.isCoordinator).toBeNull();
-      expect(result.id).toBeDefined();
-      expect(result.createdAt).toBeDefined();
+      expect(agent).toBeDefined();
+      expect(agent.name).toBe(agentData.name);
+      expect(agent.role).toBe(agentData.role);
+      expect(agent.instructions).toBe(agentData.instructions);
+      expect(agent.model).toBe(agentData.model);
+      expect(agent.crewId).toBe(createdCrew.id);
+      expect(agent.description).toBe(agentData.description);
+      expect(agent.temperature).toBe(agentData.temperature);
+      expect(agent.isCoordinator).toBeNull();
+      expect(agent.id).toBeDefined();
+      expect(agent.createdAt).toBeDefined();
     });
 
     it('should create a coordinator agent successfully', async () => {
@@ -57,13 +60,14 @@ describe('AgentService', () => {
       };
 
       const result = await agentService.createAgent(agentData);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result.name).toBe(agentData.name);
-      expect(result.isCoordinator).toBe(true);
+      expect(agent).toBeDefined();
+      expect(agent.name).toBe(agentData.name);
+      expect(agent.isCoordinator).toBe(true);
     });
 
-    it('should throw error when creating second coordinator for same crew', async () => {
+    it('should return error when creating second coordinator for same crew', async () => {
       const { createdUser } = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
         userId: createdUser.id
@@ -80,16 +84,17 @@ describe('AgentService', () => {
       });
 
       // Try to create second coordinator
-      await expect(
-        agentService.createAgent({
-          crewId: createdCrew.id,
-          instructions: 'You also coordinate the workflow',
-          isCoordinator: true,
-          model: 'gpt-4',
-          name: 'Second Coordinator',
-          role: 'Coordinator'
-        })
-      ).rejects.toThrow('Only one agent can be the coordinator per crew');
+      const result = await agentService.createAgent({
+        crewId: createdCrew.id,
+        instructions: 'You also coordinate the workflow',
+        isCoordinator: true,
+        model: 'gpt-4',
+        name: 'Second Coordinator',
+        role: 'Coordinator'
+      });
+
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
     });
 
     it('should create agent with tools', async () => {
@@ -108,10 +113,11 @@ describe('AgentService', () => {
       };
 
       const result = await agentService.createAgent(agentData);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result.name).toBe(agentData.name);
-      expect(result.tools).toEqual(agentData.tools);
+      expect(agent).toBeDefined();
+      expect(agent.name).toBe(agentData.name);
+      expect(agent.tools).toEqual(agentData.tools);
     });
 
     it('should handle null values correctly', async () => {
@@ -130,13 +136,14 @@ describe('AgentService', () => {
       };
 
       const result = await agentService.createAgent(agentData);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result.description).toBeNull();
-      expect(result.isCoordinator).toBeNull();
-      expect(result.order).toBeNull();
-      expect(result.temperature).toBeNull();
-      expect(result.tools).toBeNull();
+      expect(agent).toBeDefined();
+      expect(agent.description).toBeNull();
+      expect(agent.isCoordinator).toBeNull();
+      expect(agent.order).toBeNull();
+      expect(agent.temperature).toBeNull();
+      expect(agent.tools).toBeNull();
     });
   });
 
@@ -153,11 +160,12 @@ describe('AgentService', () => {
       await agentFactory.createBasicAgent({ crewId: createdCrew.id });
 
       const result = await agentService.listAgents(createdCrew.id);
+      const agents = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(3);
-      result.forEach((agent) => {
+      expect(agents).toBeDefined();
+      expect(Array.isArray(agents)).toBe(true);
+      expect(agents.length).toBe(3);
+      agents.forEach((agent: Agent) => {
         expect(agent.crewId).toBe(createdCrew.id);
       });
     });
@@ -169,10 +177,11 @@ describe('AgentService', () => {
       });
 
       const result = await agentService.listAgents(createdCrew.id);
+      const agents = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(0);
+      expect(agents).toBeDefined();
+      expect(Array.isArray(agents)).toBe(true);
+      expect(agents.length).toBe(0);
     });
   });
 
@@ -187,16 +196,18 @@ describe('AgentService', () => {
       });
 
       const result = await agentService.getAgentById(createdAgent.id);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.id).toBe(createdAgent.id);
-      expect(result?.name).toBe(createdAgent.name);
+      expect(agent).toBeDefined();
+      expect(agent?.id).toBe(createdAgent.id);
+      expect(agent?.name).toBe(createdAgent.name);
     });
 
-    it('should return null for non-existent agent', async () => {
+    it('should return error for non-existent agent', async () => {
       const result = await agentService.getAgentById('00000000-0000-0000-0000-000000000000');
 
-      expect(result).toBeNull();
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('AGENT_NOT_FOUND');
     });
   });
 
@@ -212,11 +223,12 @@ describe('AgentService', () => {
       await agentFactory.createBasicAgent({ crewId: createdCrew.id });
 
       const result = await agentService.getAgentsByCrewAndUser(createdCrew.id, createdUser.id);
+      const agents = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(2);
-      result.forEach((agent) => {
+      expect(agents).toBeDefined();
+      expect(Array.isArray(agents)).toBe(true);
+      expect(agents.length).toBe(2);
+      agents.forEach((agent: Agent) => {
         expect(agent.crewId).toBe(createdCrew.id);
       });
     });
@@ -232,10 +244,11 @@ describe('AgentService', () => {
       await agentFactory.createBasicAgent({ crewId: createdCrew.id });
 
       const result = await agentService.getAgentsByCrewAndUser(createdCrew.id, createUser2.id);
+      const agents = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(0);
+      expect(agents).toBeDefined();
+      expect(Array.isArray(agents)).toBe(true);
+      expect(agents.length).toBe(0);
     });
   });
 
@@ -257,15 +270,16 @@ describe('AgentService', () => {
       };
 
       const result = await agentService.updateAgent(createdAgent.id, updateData);
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.name).toBe(updateData.name);
-      expect(result?.role).toBe(updateData.role);
-      expect(result?.instructions).toBe(updateData.instructions);
-      expect(result?.temperature).toBe(updateData.temperature);
+      expect(agent).toBeDefined();
+      expect(agent?.name).toBe(updateData.name);
+      expect(agent?.role).toBe(updateData.role);
+      expect(agent?.instructions).toBe(updateData.instructions);
+      expect(agent?.temperature).toBe(updateData.temperature);
       // Unchanged fields should remain the same
-      expect(result?.model).toBe(createdAgent.model);
-      expect(result?.crewId).toBe(createdAgent.crewId);
+      expect(agent?.model).toBe(createdAgent.model);
+      expect(agent?.crewId).toBe(createdAgent.crewId);
     });
 
     it('should update agent to coordinator successfully', async () => {
@@ -281,12 +295,13 @@ describe('AgentService', () => {
       const result = await agentService.updateAgent(createdAgent.id, {
         isCoordinator: true
       });
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.isCoordinator).toBe(true);
+      expect(agent).toBeDefined();
+      expect(agent?.isCoordinator).toBe(true);
     });
 
-    it('should throw error when updating to coordinator when another coordinator exists', async () => {
+    it('should return error when updating to coordinator when another coordinator exists', async () => {
       const { createdUser } = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
         userId: createdUser.id
@@ -304,17 +319,19 @@ describe('AgentService', () => {
       });
 
       // Try to update second agent to coordinator
-      await expect(
-        agentService.updateAgent(secondAgent.id, { isCoordinator: true })
-      ).rejects.toThrow('Only one agent can be the coordinator per crew');
+      const result = await agentService.updateAgent(secondAgent.id, { isCoordinator: true });
+
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
     });
 
-    it('should return null for non-existent agent', async () => {
+    it('should return error for non-existent agent', async () => {
       const result = await agentService.updateAgent('00000000-0000-0000-0000-000000000000', {
         name: 'Updated Name'
       });
 
-      expect(result).toBeNull();
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('AGENT_NOT_FOUND');
     });
 
     it('should handle partial updates correctly', async () => {
@@ -333,11 +350,12 @@ describe('AgentService', () => {
       const result = await agentService.updateAgent(createdAgent.id, {
         name: 'Updated Name'
       });
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.name).toBe('Updated Name');
-      expect(result?.role).toBe('Original Role'); // Should remain unchanged
-      expect(result?.temperature).toBe(70); // Should remain unchanged
+      expect(agent).toBeDefined();
+      expect(agent?.name).toBe('Updated Name');
+      expect(agent?.role).toBe('Original Role'); // Should remain unchanged
+      expect(agent?.temperature).toBe(70); // Should remain unchanged
     });
 
     it('should handle null values in updates', async () => {
@@ -356,10 +374,11 @@ describe('AgentService', () => {
         description: '',
         tools: []
       });
+      const agent = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.description).toBe('');
-      expect(result?.tools).toEqual([]);
+      expect(agent).toBeDefined();
+      expect(agent?.description).toBe('');
+      expect(agent?.tools).toEqual([]);
     });
   });
 
@@ -373,19 +392,25 @@ describe('AgentService', () => {
         crewId: createdCrew.id
       });
 
-      const result = await agentService.deleteAgent(createdAgent.id);
+      const result = await agentService.deleteAgent(createdAgent.id, createdUser.id);
+      const success = result._unsafeUnwrap();
 
-      expect(result).toBe(true);
+      expect(success).toBe(true);
 
       // Verify agent is deleted
-      const deletedAgent = await agentService.getAgentById(createdAgent.id);
-      expect(deletedAgent).toBeNull();
+      const getResult = await agentService.getAgentById(createdAgent.id);
+      expect(getResult.isErr()).toBe(true);
+      expect(getResult._unsafeUnwrapErr()).toBe('AGENT_NOT_FOUND');
     });
 
-    it('should return false for non-existent agent', async () => {
-      const result = await agentService.deleteAgent('00000000-0000-0000-0000-000000000000');
+    it('should return error for non-existent agent', async () => {
+      const result = await agentService.deleteAgent(
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000000'
+      );
 
-      expect(result).toBe(false);
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('AGENT_NOT_FOUND');
     });
   });
 });

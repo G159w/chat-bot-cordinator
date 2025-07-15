@@ -40,13 +40,14 @@ describe('WorkflowService', () => {
         createUser.createdUser.id,
         executionData
       );
+      const execution = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result.executionId).toBeDefined();
-      expect(typeof result.executionId).toBe('string');
+      expect(execution).toBeDefined();
+      expect(execution.executionId).toBeDefined();
+      expect(typeof execution.executionId).toBe('string');
     });
 
-    it('should throw error for crew not owned by user', async () => {
+    it('should return error for crew not owned by user', async () => {
       const { createdUser: createUser1 } = await userFactory.createBasicUser();
       const { createdUser: createUser2 } = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
@@ -58,12 +59,12 @@ describe('WorkflowService', () => {
         input: 'Research the latest AI developments'
       };
 
-      expect(workflowService.executeWorkflow(createUser2.id, executionData)).rejects.toThrow(
-        'Crew not found'
-      );
+      const result = await workflowService.executeWorkflow(createUser2.id, executionData);
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('CREW_NOT_FOUND');
     });
 
-    it('should throw error for non-existent crew', async () => {
+    it('should return error for non-existent crew', async () => {
       const { createdUser } = await userFactory.createBasicUser();
 
       const executionData = {
@@ -71,12 +72,12 @@ describe('WorkflowService', () => {
         input: 'Research the latest AI developments'
       };
 
-      await expect(workflowService.executeWorkflow(createdUser.id, executionData)).rejects.toThrow(
-        'Crew not found'
-      );
+      const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('CREW_NOT_FOUND');
     });
 
-    it('should throw error for crew with no agents', async () => {
+    it('should return error for crew with no agents', async () => {
       const { createdUser } = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
         userId: createdUser.id
@@ -87,9 +88,9 @@ describe('WorkflowService', () => {
         input: 'Research the latest AI developments'
       };
 
-      await expect(workflowService.executeWorkflow(createdUser.id, executionData)).rejects.toThrow(
-        'No agents found in crew'
-      );
+      const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('NO_AGENTS_FOUND_IN_CREW');
     });
 
     it('should create workflow execution with correct data', async () => {
@@ -113,17 +114,19 @@ describe('WorkflowService', () => {
       };
 
       const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      const execution = result._unsafeUnwrap();
 
       // Verify execution was created
-      const execution = await workflowService.getExecutionStatus(
-        result.executionId,
+      const statusResult = await workflowService.getExecutionStatus(
+        execution.executionId,
         createdUser.id
       );
-      expect(execution).toBeDefined();
-      expect(execution?.crewId).toBe(createdCrew.id);
-      expect(execution?.input).toBe(executionData.input);
-      expect(execution?.userId).toBe(createdUser.id);
-      expect(execution?.status).toBe('running');
+      const status = statusResult._unsafeUnwrap();
+      expect(status).toBeDefined();
+      expect(status?.crewId).toBe(createdCrew.id);
+      expect(status?.input).toBe(executionData.input);
+      expect(status?.userId).toBe(createdUser.id);
+      expect(status?.status).toBe('running');
     });
   });
 
@@ -145,15 +148,16 @@ describe('WorkflowService', () => {
         workflowExecution.id,
         createUser.createdUser.id
       );
+      const execution = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.id).toBe(workflowExecution.id);
-      expect(result?.crewId).toBe(createdCrew.id);
-      expect(result?.userId).toBe(createUser.createdUser.id);
-      expect(result?.status).toBe('completed');
+      expect(execution).toBeDefined();
+      expect(execution?.id).toBe(workflowExecution.id);
+      expect(execution?.crewId).toBe(createdCrew.id);
+      expect(execution?.userId).toBe(createUser.createdUser.id);
+      expect(execution?.status).toBe('completed');
     });
 
-    it('should throw error for execution not owned by user', async () => {
+    it('should return error for execution not owned by user', async () => {
       const createUser1 = await userFactory.createBasicUser();
       const createUser2 = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
@@ -165,20 +169,23 @@ describe('WorkflowService', () => {
         userId: createUser1.createdUser.id
       });
 
-      await expect(
-        workflowService.getExecutionStatus(workflowExecution.id, createUser2.createdUser.id)
-      ).rejects.toThrow('Workflow execution not found');
+      const result = await workflowService.getExecutionStatus(
+        workflowExecution.id,
+        createUser2.createdUser.id
+      );
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('WORKFLOW_EXECUTION_NOT_FOUND');
     });
 
-    it('should throw error for non-existent execution', async () => {
+    it('should return error for non-existent execution', async () => {
       const createUser = await userFactory.createBasicUser();
 
-      await expect(
-        workflowService.getExecutionStatus(
-          '00000000-0000-0000-0000-000000000000',
-          createUser.createdUser.id
-        )
-      ).rejects.toThrow('Workflow execution not found');
+      const result = await workflowService.getExecutionStatus(
+        '00000000-0000-0000-0000-000000000000',
+        createUser.createdUser.id
+      );
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('WORKFLOW_EXECUTION_NOT_FOUND');
     });
   });
 
@@ -223,19 +230,20 @@ describe('WorkflowService', () => {
         workflowExecution.id,
         createUser.createdUser.id
       );
+      const details = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.execution.id).toBe(workflowExecution.id);
-      expect(result?.execution.crewId).toBe(createdCrew.id);
-      expect(result?.execution.userId).toBe(createUser.createdUser.id);
-      expect(result?.agentExecutions).toHaveLength(2);
-      expect(result?.agentExecutions[0].agent.name).toBe('Agent 1');
-      expect(result?.agentExecutions[0].agent.role).toBe('Researcher');
-      expect(result?.agentExecutions[1].agent.name).toBe('Agent 2');
-      expect(result?.agentExecutions[1].agent.role).toBe('Writer');
+      expect(details).toBeDefined();
+      expect(details?.execution.id).toBe(workflowExecution.id);
+      expect(details?.execution.crewId).toBe(createdCrew.id);
+      expect(details?.execution.userId).toBe(createUser.createdUser.id);
+      expect(details?.agentExecutions).toHaveLength(2);
+      expect(details?.agentExecutions[0].agent.name).toBe('Agent 1');
+      expect(details?.agentExecutions[0].agent.role).toBe('Researcher');
+      expect(details?.agentExecutions[1].agent.name).toBe('Agent 2');
+      expect(details?.agentExecutions[1].agent.role).toBe('Writer');
     });
 
-    it('should throw error for execution not owned by user', async () => {
+    it('should return error for execution not owned by user', async () => {
       const createUser1 = await userFactory.createBasicUser();
       const createUser2 = await userFactory.createBasicUser();
       const createdCrew = await crewFactory.createBasicCrew({
@@ -247,20 +255,23 @@ describe('WorkflowService', () => {
         userId: createUser1.createdUser.id
       });
 
-      await expect(
-        workflowService.getExecutionWithDetails(workflowExecution.id, createUser2.createdUser.id)
-      ).rejects.toThrow('Workflow execution not found');
+      const result = await workflowService.getExecutionWithDetails(
+        workflowExecution.id,
+        createUser2.createdUser.id
+      );
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('WORKFLOW_EXECUTION_NOT_FOUND');
     });
 
-    it('should throw error for non-existent execution', async () => {
+    it('should return error for non-existent execution', async () => {
       const createUser = await userFactory.createBasicUser();
 
-      await expect(
-        workflowService.getExecutionWithDetails(
-          '00000000-0000-0000-0000-000000000000',
-          createUser.createdUser.id
-        )
-      ).rejects.toThrow('Workflow execution not found');
+      const result = await workflowService.getExecutionWithDetails(
+        '00000000-0000-0000-0000-000000000000',
+        createUser.createdUser.id
+      );
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('WORKFLOW_EXECUTION_NOT_FOUND');
     });
 
     it('should return empty agent executions for new workflow', async () => {
@@ -279,10 +290,11 @@ describe('WorkflowService', () => {
         workflowExecution.id,
         createUser.createdUser.id
       );
+      const details = result._unsafeUnwrap();
 
-      expect(result).toBeDefined();
-      expect(result?.execution.id).toBe(workflowExecution.id);
-      expect(result?.agentExecutions).toHaveLength(0);
+      expect(details).toBeDefined();
+      expect(details?.execution.id).toBe(workflowExecution.id);
+      expect(details?.agentExecutions).toHaveLength(0);
     });
   });
 
@@ -309,22 +321,25 @@ describe('WorkflowService', () => {
 
       // Start workflow execution
       const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      const execution = result._unsafeUnwrap();
 
       // Check initial status
-      const initialStatus = await workflowService.getExecutionStatus(
-        result.executionId,
+      const initialStatusResult = await workflowService.getExecutionStatus(
+        execution.executionId,
         createdUser.id
       );
+      const initialStatus = initialStatusResult._unsafeUnwrap();
       expect(initialStatus?.status).toBe('running');
 
       // Wait a bit for async execution to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check final status
-      const finalStatus = await workflowService.getExecutionStatus(
-        result.executionId,
+      const finalStatusResult = await workflowService.getExecutionStatus(
+        execution.executionId,
         createdUser.id
       );
+      const finalStatus = finalStatusResult._unsafeUnwrap();
       expect(['completed', 'failed', 'running']).toContain(finalStatus?.status);
     });
 
@@ -365,15 +380,17 @@ describe('WorkflowService', () => {
       };
 
       const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      const execution = result._unsafeUnwrap();
 
       // Wait for execution to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Get execution details
-      const details = await workflowService.getExecutionWithDetails(
-        result.executionId,
+      const detailsResult = await workflowService.getExecutionWithDetails(
+        execution.executionId,
         createdUser.id
       );
+      const details = detailsResult._unsafeUnwrap();
       expect(details).toBeDefined();
       expect(details?.agentExecutions.length).toBeGreaterThan(0);
     });
@@ -401,12 +418,17 @@ describe('WorkflowService', () => {
       };
 
       const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      const execution = result._unsafeUnwrap();
 
       // Wait for execution to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that execution completed (even if with errors)
-      const status = await workflowService.getExecutionStatus(result.executionId, createdUser.id);
+      const statusResult = await workflowService.getExecutionStatus(
+        execution.executionId,
+        createdUser.id
+      );
+      const status = statusResult._unsafeUnwrap();
       expect(status).toBeDefined();
       expect(['completed', 'failed', 'running']).toContain(status?.status);
     });
@@ -419,9 +441,9 @@ describe('WorkflowService', () => {
         input: 'Research the latest AI developments'
       };
 
-      await expect(workflowService.executeWorkflow(createdUser.id, executionData)).rejects.toThrow(
-        'Crew not found'
-      );
+      const result = await workflowService.executeWorkflow(createdUser.id, executionData);
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr()).toBe('CREW_NOT_FOUND');
     });
   });
 
@@ -430,12 +452,12 @@ describe('WorkflowService', () => {
       const { createdUser } = await userFactory.createBasicUser();
 
       // Test missing crewId
-      await expect(
-        workflowService.executeWorkflow(createdUser.id, {
-          crewId: '00000000-0000-0000-0000-000000000000',
-          input: 'Test input'
-        })
-      ).rejects.toThrow('Crew not found');
+      const result1 = await workflowService.executeWorkflow(createdUser.id, {
+        crewId: '00000000-0000-0000-0000-000000000000',
+        input: 'Test input'
+      });
+      expect(result1.isErr()).toBe(true);
+      expect(result1._unsafeUnwrapErr()).toBe('CREW_NOT_FOUND');
 
       // Test missing input
       const createdCrew = await crewFactory.createBasicCrew({
@@ -450,12 +472,12 @@ describe('WorkflowService', () => {
         role: 'Coordinator'
       });
 
-      await expect(
-        workflowService.executeWorkflow(createdUser.id, {
-          crewId: createdCrew.id,
-          input: ''
-        })
-      ).rejects.toThrow('Input is required');
+      const result2 = await workflowService.executeWorkflow(createdUser.id, {
+        crewId: createdCrew.id,
+        input: ''
+      });
+      expect(result2.isErr()).toBe(true);
+      expect(result2._unsafeUnwrapErr()).toBe('INPUT_REQUIRED');
     });
   });
 });

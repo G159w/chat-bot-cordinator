@@ -1,5 +1,6 @@
 import { StatusCodes } from '$lib/utils/status-codes';
 import { inject, injectable } from '@needle-di/core';
+import { t } from 'elysia';
 
 import type { AuthGuardedApp } from '../api';
 
@@ -25,6 +26,19 @@ export function BadRequest(message?: string, errorData?: unknown) {
 
 export function Conflict(message?: string, errorData?: unknown) {
   return new HttpError(message || 'Conflict', StatusCodes.CONFLICT, errorData);
+}
+
+export function errorSchema<T extends string>(data: T) {
+  return t.Object({
+    code: t.Number(),
+    data: t.Union([t.TemplateLiteral(data)]),
+    error: t.Boolean(),
+    message: t.String()
+  });
+}
+
+export function failShouldNotHappen() {
+  return Internal();
 }
 
 export function Forbidden(message?: string, errorData?: unknown) {
@@ -70,7 +84,6 @@ export function ServiceUnavailable(message?: string, errorData?: unknown) {
     errorData
   );
 }
-
 export function TooManyRequests(message?: string, errorData?: unknown) {
   return new HttpError(message || 'Too Many Requests', StatusCodes.TOO_MANY_REQUESTS, errorData);
 }
@@ -78,6 +91,7 @@ export function TooManyRequests(message?: string, errorData?: unknown) {
 export function Unauthorized(message?: string, errorData?: unknown) {
   return new HttpError(message || 'Unauthorized', StatusCodes.UNAUTHORIZED, errorData);
 }
+
 export function UnsupportedMediaType(message?: string, errorData?: unknown) {
   return new HttpError(
     message || 'UnsupportedMediaType',

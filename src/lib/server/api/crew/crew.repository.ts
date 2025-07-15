@@ -1,8 +1,9 @@
 import type { Agent, Crew } from '$lib/server/db/schema';
 
 import { DbRepository, DbService } from '$lib/server/db/db.service';
-import { agentTable, crewTable } from '$lib/server/db/schema';
+import { agentTable, crewTable, crewUpdateSchema } from '$lib/server/db/schema';
 import { inject, injectable } from '@needle-di/core';
+import { Value } from '@sinclair/typebox/value';
 import { and, eq } from 'drizzle-orm';
 
 @injectable()
@@ -77,10 +78,7 @@ export class CrewRepository extends DbRepository {
   async getCrewWithAgents(
     id: string,
     userId: string
-  ): Promise<null | {
-    agents: Agent[];
-    crew: Crew;
-  }> {
+  ): Promise<(Crew & { agents: Agent[] }) | null> {
     const crewResult = await this.findById(id, userId);
     if (!crewResult) return null;
 
@@ -91,8 +89,8 @@ export class CrewRepository extends DbRepository {
       .orderBy(agentTable.order);
 
     return {
-      agents,
-      crew: crewResult
+      ...crewResult,
+      agents
     };
   }
 
@@ -104,13 +102,14 @@ export class CrewRepository extends DbRepository {
       isActive?: boolean;
       name?: string;
     }
-  ): Promise<Crew | null> {
+  ): Promise<Crew> {
+    const updatedCrew = Value.Parse(crewUpdateSchema, data);
     const [result] = await this.db
       .update(crewTable)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...updatedCrew, updatedAt: new Date() })
       .where(and(eq(crewTable.id, id), eq(crewTable.userId, userId)))
       .returning();
 
-    return result || null;
+    return result;
   }
 }

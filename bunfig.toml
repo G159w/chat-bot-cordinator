@@ -2,6 +2,13 @@
 # Enable coverage reporting
 coverage = false
 
+coveragePathIgnorePatterns = [
+  "**/test/**",
+  "**/db/**",
+  'src/lib/server/api/logger.ts',
+  'src/lib/server/api/utils/exceptions.ts',
+]
+
 # Test timeout in milliseconds
 timeout = 10000
 

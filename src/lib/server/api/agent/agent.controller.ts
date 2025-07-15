@@ -1,12 +1,16 @@
 import { inject, injectable } from '@needle-di/core';
+import { t } from 'elysia';
 
 import type { AuthGuardedApp } from '../api';
 
+import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
 import {
+  agentIdParamSchema,
   agentListQuerySchema,
   agentListResponseSchema,
   agentResponseSchema,
-  createAgentRequestSchema
+  createAgentRequestSchema,
+  updateAgentRequestSchema
 } from './agent.dto';
 import { AgentService } from './agent.service';
 
@@ -21,7 +25,16 @@ export class AgentController {
       .get(
         '/agents',
         async ({ query }) => {
-          return this.agentService.listAgents(query.crewId);
+          const result = await this.agentService.listAgents(query.crewId);
+          return result.match(
+            (agents) => agents,
+            (error) => {
+              switch (error) {
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -31,13 +44,26 @@ export class AgentController {
             tags: ['Agents']
           },
           query: agentListQuerySchema,
-          response: agentListResponseSchema
+          response: {
+            200: agentListResponseSchema
+          }
         }
       )
       .post(
         '/agents',
         async ({ body }) => {
-          return this.agentService.createAgent(body);
+          const result = await this.agentService.createAgent(body);
+          return result.match(
+            (agent) => agent,
+            (error) => {
+              switch (error) {
+                case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW':
+                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           body: createAgentRequestSchema,
@@ -47,7 +73,72 @@ export class AgentController {
             summary: 'Create a new agent',
             tags: ['Agents']
           },
-          response: agentResponseSchema
+          response: {
+            200: agentResponseSchema,
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW')
+          }
+        }
+      )
+      .put(
+        '/agents/:id',
+        async ({ body, params }) => {
+          const result = await this.agentService.updateAgent(params.id, body);
+          return result.match(
+            (agent) => agent,
+            (error) => {
+              switch (error) {
+                case 'AGENT_NOT_FOUND':
+                  throw NotFound('Agent not found');
+                case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW':
+                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
+        },
+        {
+          body: updateAgentRequestSchema,
+          detail: {
+            description: 'Updates an existing agent. Partial updates are supported.',
+            summary: 'Update an agent',
+            tags: ['Agents']
+          },
+          params: agentIdParamSchema,
+          response: {
+            200: agentResponseSchema,
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW'),
+            404: errorSchema('AGENT_NOT_FOUND')
+          }
+        }
+      )
+      .delete(
+        '/agents/:id',
+        async ({ params, user }) => {
+          const result = await this.agentService.deleteAgent(params.id, user.id);
+          return result.match(
+            (success) => success,
+            (error) => {
+              switch (error) {
+                case 'AGENT_NOT_FOUND':
+                  throw NotFound('Agent not found');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
+        },
+        {
+          detail: {
+            description: 'Deletes an existing agent.',
+            summary: 'Delete an agent',
+            tags: ['Agents']
+          },
+          params: agentIdParamSchema,
+          response: {
+            200: t.Boolean(),
+            404: errorSchema('AGENT_NOT_FOUND')
+          }
         }
       );
   }

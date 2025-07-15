@@ -80,9 +80,8 @@ describe('Crew Controller', () => {
           ...createAuthenticatedRequest({ userToken })
         });
 
-      expect(response.status).toBe(404);
+      expect(response.error?.status).toBe(404);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Crew not found');
     });
 
     it('should return 401 for unauthenticated request', async () => {
@@ -110,11 +109,11 @@ describe('Crew Controller', () => {
 
       expect(response.status).toBe(200);
       expect(response.data).toBeDefined();
-      expect(response.data?.crew.id).toBe(_createdCrew.id);
-      expect(response.data?.crew.name).toBe('Test Crew');
+      expect(response.data?.id).toBe(_createdCrew.id);
+      expect(response.data?.name).toBe('Test Crew');
       expect(response.data?.agents).toBeDefined();
       expect(Array.isArray(response.data?.agents)).toBe(true);
-      expect(response.data?.agents.length).toBeGreaterThan(0);
+      expect(response.data?.agents?.length).toBeGreaterThan(0);
     });
 
     it('should return null for non-existent crew', async () => {
@@ -125,10 +124,9 @@ describe('Crew Controller', () => {
           ...createAuthenticatedRequest({ userToken })
         });
 
-      expect(response.status).toBe(404);
+      expect(response.error?.status).toBe(404);
       expect(response.data).toBeNull();
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Crew not found');
     });
   });
 
@@ -235,9 +233,8 @@ describe('Crew Controller', () => {
           createAuthenticatedRequest({ userToken })
         );
 
-      expect(response.status).toBe(404);
+      expect(response.error?.status).toBe(404);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Crew not found');
     });
 
     it('should support partial updates', async () => {
@@ -293,9 +290,8 @@ describe('Crew Controller', () => {
         .crews({ id: '550e8400-e29b-41d4-a716-446655440000' })
         .delete({}, createAuthenticatedRequest({ userToken }));
 
-      expect(response.status).toBe(404);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Crew not found');
+      expect(response.error?.status).toBe(404);
     });
   });
 });

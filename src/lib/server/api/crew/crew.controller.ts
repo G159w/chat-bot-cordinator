@@ -3,13 +3,13 @@ import { t } from 'elysia';
 
 import type { AuthGuardedApp } from '../api';
 
+import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
 import {
   createCrewRequestSchema,
   crewIdParamSchema,
   crewListResponseSchema,
   crewResponseSchema,
-  crewResponseUnionSchema,
-  crewWithAgentsResponseUnionSchema,
+  crewWithAgentsResponseSchema,
   updateCrewRequestSchema
 } from './crew.dto';
 import { CrewService } from './crew.service';
@@ -25,7 +25,16 @@ export class CrewController {
       .get(
         '/crews',
         async ({ user }) => {
-          return this.crewService.listCrews(user.id);
+          const result = await this.crewService.listCrews(user.id);
+          return result.match(
+            (crews) => crews,
+            (error) => {
+              switch (error) {
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -34,13 +43,26 @@ export class CrewController {
             summary: 'List all crews for the authenticated user',
             tags: ['Crews']
           },
-          response: crewListResponseSchema
+          response: {
+            200: crewListResponseSchema
+          }
         }
       )
       .get(
         '/crews/:id',
         async ({ params, user }) => {
-          return this.crewService.getCrewById(params.id, user.id);
+          const result = await this.crewService.getCrewById(params.id, user.id);
+          return result.match(
+            (crew) => crew,
+            (error) => {
+              switch (error) {
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('Crew not found');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -50,13 +72,27 @@ export class CrewController {
             tags: ['Crews']
           },
           params: crewIdParamSchema,
-          response: crewResponseUnionSchema
+          response: {
+            200: crewResponseSchema,
+            404: errorSchema('CREW_NOT_FOUND')
+          }
         }
       )
       .get(
         '/crews/:id/with-agents',
         async ({ params, user }) => {
-          return this.crewService.getCrewWithAgents(params.id, user.id);
+          const result = await this.crewService.getCrewWithAgents(params.id, user.id);
+          return result.match(
+            (crew) => crew,
+            (error) => {
+              switch (error) {
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('Crew not found');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -66,13 +102,27 @@ export class CrewController {
             tags: ['Crews']
           },
           params: crewIdParamSchema,
-          response: crewWithAgentsResponseUnionSchema
+          response: {
+            200: crewWithAgentsResponseSchema,
+            404: errorSchema('CREW_NOT_FOUND')
+          }
         }
       )
       .post(
         '/crews',
         async ({ body, user }) => {
-          return this.crewService.createCrew(user.id, body);
+          const result = await this.crewService.createCrew(user.id, body);
+          return result.match(
+            (crew) => crew,
+            (error) => {
+              switch (error) {
+                case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR':
+                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           body: createCrewRequestSchema,
@@ -82,13 +132,27 @@ export class CrewController {
             summary: 'Create a new crew',
             tags: ['Crews']
           },
-          response: crewResponseSchema
+          response: {
+            200: crewResponseSchema,
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR')
+          }
         }
       )
       .put(
         '/crews/:id',
         async ({ body, params, user }) => {
-          return this.crewService.updateCrew(params.id, user.id, body);
+          const result = await this.crewService.updateCrew(params.id, user.id, body);
+          return result.match(
+            (crew) => crew,
+            (error) => {
+              switch (error) {
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('Crew not found');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           body: updateCrewRequestSchema,
@@ -99,13 +163,27 @@ export class CrewController {
             tags: ['Crews']
           },
           params: crewIdParamSchema,
-          response: crewResponseUnionSchema
+          response: {
+            200: crewResponseSchema,
+            404: errorSchema('CREW_NOT_FOUND')
+          }
         }
       )
       .delete(
         '/crews/:id',
         async ({ params, user }) => {
-          return this.crewService.deleteCrew(params.id, user.id);
+          const result = await this.crewService.deleteCrew(params.id, user.id);
+          return result.match(
+            (success) => success,
+            (error) => {
+              switch (error) {
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('CREW_NOT_FOUND');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -115,7 +193,10 @@ export class CrewController {
             tags: ['Crews']
           },
           params: crewIdParamSchema,
-          response: t.Boolean()
+          response: {
+            200: t.Boolean(),
+            404: errorSchema('CREW_NOT_FOUND')
+          }
         }
       );
   }

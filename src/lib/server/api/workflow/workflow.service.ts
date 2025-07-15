@@ -1,10 +1,10 @@
 import type { AgentExecution, WorkflowExecution } from '$lib/server/db/schema';
 
 import { inject, injectable } from '@needle-di/core';
+import { err, ok, Result } from 'neverthrow';
 
 import { AgentRepository } from '../agent/agent.repository';
 import { CrewRepository } from '../crew/crew.repository';
-import { BadRequest, NotFound } from '../utils/exceptions';
 import {
   AgentExecutionRepository,
   ExecutionStepRepository,
@@ -27,20 +27,23 @@ export class WorkflowService {
       crewId: string;
       input: string;
     }
-  ): Promise<{ executionId: string }> {
+  ): Promise<
+    Result<{ executionId: string }, 'CREW_NOT_FOUND' | 'INPUT_REQUIRED' | 'NO_AGENTS_FOUND_IN_CREW'>
+  > {
     if (!data.input) {
-      throw BadRequest('Input is required');
+      return err('INPUT_REQUIRED');
     }
+
     // Verify crew belongs to user
     const crew = await this.crewRepository.findById(data.crewId, userId);
     if (!crew || crew.userId !== userId) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
     // Get agents for the crew
     const agents = await this.agentRepository.findByCrewIdAndUser(data.crewId, userId);
     if (agents.length === 0) {
-      throw BadRequest('No agents found in crew');
+      return err('NO_AGENTS_FOUND_IN_CREW');
     }
 
     // Create workflow execution record
@@ -59,36 +62,46 @@ export class WorkflowService {
       data.input
     );
 
-    return { executionId: execution.id };
+    return ok({ executionId: execution.id });
   }
 
-  async getExecutionStatus(id: string, userId: string): Promise<null | WorkflowExecution> {
+  async getExecutionStatus(
+    id: string,
+    userId: string
+  ): Promise<Result<WorkflowExecution, 'WORKFLOW_EXECUTION_NOT_FOUND'>> {
     const result = await this.workflowRepository.findById(id, userId);
     if (!result || result.userId !== userId) {
-      throw NotFound('Workflow execution not found');
+      return err('WORKFLOW_EXECUTION_NOT_FOUND');
     }
-    return result;
+    return ok(result);
   }
 
   async getExecutionWithDetails(
     id: string,
     userId: string
-  ): Promise<null | {
-    agentExecutions: (AgentExecution & { agent: { name: string; role: string } })[];
-    execution: WorkflowExecution;
-  }> {
+  ): Promise<
+    Result<
+      {
+        agentExecutions: (AgentExecution & { agent: { name: string; role: string } })[];
+        execution: WorkflowExecution;
+      },
+      'WORKFLOW_EXECUTION_NOT_FOUND'
+    >
+  > {
     const execution = await this.workflowRepository.findById(id, userId);
     if (!execution || execution.userId !== userId) {
-      throw NotFound('Workflow execution not found');
+      return err('WORKFLOW_EXECUTION_NOT_FOUND');
     }
+
     const result = await this.workflowRepository.getExecutionWithDetails(id);
     if (!result) {
-      throw NotFound('Workflow execution not found');
+      return err('WORKFLOW_EXECUTION_NOT_FOUND');
     }
-    return {
+
+    return ok({
       agentExecutions: result,
       execution
-    };
+    });
   }
 
   private async callLLM(agent: { name: string; role: string }, input: string): Promise<string> {

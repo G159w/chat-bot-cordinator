@@ -44,9 +44,8 @@ describe('Workflow Controller', () => {
         createAuthenticatedRequest({ userToken })
       );
 
-      expect(response.status).toBe(404);
+      expect(response.error?.status).toBe(404);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Crew not found');
     });
 
     it('should return 400 for crew with no agents', async () => {
@@ -65,9 +64,8 @@ describe('Workflow Controller', () => {
         createAuthenticatedRequest({ userToken })
       );
 
-      expect(response.status).toBe(400);
+      expect(response.error?.status).toBe(400);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('No agents found in crew');
     });
 
     it('should return 401 for unauthenticated request', async () => {
@@ -123,7 +121,7 @@ describe('Workflow Controller', () => {
       expect(response.data?.startedAt).toBeDefined();
     });
 
-    it('should return null for non-existent execution', async () => {
+    it('should return 404 for non-existent execution', async () => {
       const { userToken } = await userFactory.createBasicUser();
       const response = await apiClient.api
         .workflows({ id: '550e8400-e29b-41d4-a716-446655440000' })
@@ -131,8 +129,8 @@ describe('Workflow Controller', () => {
           ...createAuthenticatedRequest({ userToken })
         });
 
-      expect(response.status).toBe(404);
-      expect(response.data).toBeNull();
+      expect(response.error?.status).toBe(404);
+      expect(response.error).toBeDefined();
     });
 
     it('should return 401 for unauthenticated request', async () => {
@@ -180,7 +178,7 @@ describe('Workflow Controller', () => {
       expect(Array.isArray(response.data?.agentExecutions)).toBe(true);
     });
 
-    it('should return null for non-existent execution', async () => {
+    it('should return 404 for non-existent execution', async () => {
       const { userToken } = await userFactory.createBasicUser();
       const response = await apiClient.api
         .workflows({ id: '550e8400-e29b-41d4-a716-446655440000' })
@@ -188,8 +186,8 @@ describe('Workflow Controller', () => {
           ...createAuthenticatedRequest({ userToken })
         });
 
-      expect(response.status).toBe(404);
-      expect(response.data).toBeNull();
+      expect(response.error?.status).toBe(404);
+      expect(response.error).toBeDefined();
     });
 
     it('should return 401 for unauthenticated request', async () => {

@@ -2,6 +2,7 @@ import { inject, injectable } from '@needle-di/core';
 
 import type { AuthGuardedApp } from '../api';
 
+import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
 import {
   executeWorkflowRequestSchema,
   executeWorkflowResponseSchema,
@@ -22,7 +23,22 @@ export class WorkflowController {
       .post(
         '/workflows/execute',
         async ({ body, user }) => {
-          return this.workflowService.executeWorkflow(user.id, body);
+          const result = await this.workflowService.executeWorkflow(user.id, body);
+          return result.match(
+            (execution) => execution,
+            (error) => {
+              switch (error) {
+                case 'INPUT_REQUIRED':
+                  throw BadRequest('INPUT_REQUIRED');
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('CREW_NOT_FOUND');
+                case 'NO_AGENTS_FOUND_IN_CREW':
+                  throw BadRequest('NO_AGENTS_FOUND_IN_CREW');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           body: executeWorkflowRequestSchema,
@@ -32,13 +48,28 @@ export class WorkflowController {
             summary: 'Execute a workflow',
             tags: ['Workflows']
           },
-          response: executeWorkflowResponseSchema
+          response: {
+            200: executeWorkflowResponseSchema,
+            400: errorSchema('INPUT_REQUIRED'),
+            404: errorSchema('CREW_NOT_FOUND')
+          }
         }
       )
       .get(
         '/workflows/:id',
         async ({ params, user }) => {
-          return this.workflowService.getExecutionStatus(params.id, user.id);
+          const result = await this.workflowService.getExecutionStatus(params.id, user.id);
+          return result.match(
+            (execution) => execution,
+            (error) => {
+              switch (error) {
+                case 'WORKFLOW_EXECUTION_NOT_FOUND':
+                  throw NotFound('WORKFLOW_EXECUTION_NOT_FOUND');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -48,13 +79,27 @@ export class WorkflowController {
             tags: ['Workflows']
           },
           params: workflowIdParamSchema,
-          response: workflowExecutionResponseUnionSchema
+          response: {
+            200: workflowExecutionResponseUnionSchema,
+            404: errorSchema('WORKFLOW_EXECUTION_NOT_FOUND')
+          }
         }
       )
       .get(
         '/workflows/:id/details',
         async ({ params, user }) => {
-          return this.workflowService.getExecutionWithDetails(params.id, user.id);
+          const result = await this.workflowService.getExecutionWithDetails(params.id, user.id);
+          return result.match(
+            (details) => details,
+            (error) => {
+              switch (error) {
+                case 'WORKFLOW_EXECUTION_NOT_FOUND':
+                  throw NotFound('WORKFLOW_EXECUTION_NOT_FOUND');
+                default:
+                  throw failShouldNotHappen();
+              }
+            }
+          );
         },
         {
           detail: {
@@ -64,7 +109,10 @@ export class WorkflowController {
             tags: ['Workflows']
           },
           params: workflowIdParamSchema,
-          response: workflowExecutionWithDetailsResponseUnionSchema
+          response: {
+            200: workflowExecutionWithDetailsResponseUnionSchema,
+            404: errorSchema('WORKFLOW_EXECUTION_NOT_FOUND')
+          }
         }
       );
   }

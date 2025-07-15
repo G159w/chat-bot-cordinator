@@ -35,7 +35,7 @@ export const createTestApp = async () => {
 
   const factories = generateFactories(dbService);
 
-  return { apiClient, container, dbService, ...factories };
+  return { apiClient, container, db, dbService, ...factories };
 };
 
 export type TestApi = Awaited<ReturnType<typeof createTestApp>>['apiClient'];

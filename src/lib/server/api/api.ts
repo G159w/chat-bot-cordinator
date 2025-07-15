@@ -1,3 +1,4 @@
+import { treaty } from '@elysiajs/eden';
 import { Container } from '@needle-di/core';
 import { Elysia } from 'elysia';
 
@@ -19,6 +20,8 @@ export type AuthGuardedApp = ReturnType<typeof _authGuardedApp>;
 
 const app = apiController.app;
 
+const serverApiClient = treaty(app);
+
 type App = typeof app;
 
-export { app, type App, db };
+export { app, type App, db, serverApiClient };

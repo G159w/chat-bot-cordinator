@@ -1,9 +1,5 @@
 {
-  "eslint.validate": [
-    "javascript",
-    "typescript",
-    "svelte"
-  ],
+  "eslint.validate": ["javascript", "typescript", "svelte"],
   "jestrunner.jestCommand": "bun run test",
   "jestrunner.debugOptions": {
     "runtimeExecutable": "bun",
@@ -15,5 +11,5 @@
       "--watchAll=false",
       "--color"
     ]
-  },
+  }
 }

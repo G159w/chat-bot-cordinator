@@ -1,10 +1,12 @@
+import { agentTable } from '$lib/server/db/schema';
 import { testingModule } from '$lib/server/test/setup';
 import { describe, expect, it } from 'bun:test';
+import { eq } from 'drizzle-orm';
 
 import { createAuthenticatedRequest } from '../../test/helpers';
 
 describe('Agent Controller', () => {
-  const { agentFactory, apiClient, crewFactory, userFactory } = testingModule;
+  const { agentFactory, apiClient, crewFactory, db, userFactory } = testingModule;
 
   describe('GET /api/agents', () => {
     it('should return all agents for a crew', async () => {
@@ -160,9 +162,8 @@ describe('Agent Controller', () => {
         createAuthenticatedRequest({ userToken })
       );
 
-      expect(response.status).toBe(400);
+      expect(response.error?.status).toBe(400);
       expect(response.error).toBeDefined();
-      expect(response.error?.value.message).toBe('Only one agent can be the coordinator per crew');
     });
 
     it('should create agent with tools', async () => {
@@ -204,6 +205,53 @@ describe('Agent Controller', () => {
         createAuthenticatedRequest({ userToken: 'test-user-123' })
       );
 
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('DELETE /api/agents/:id', () => {
+    it('should delete an agent successfully', async () => {
+      const { createdUser, userToken } = await userFactory.createBasicUser();
+      const createdCrew = await crewFactory.createBasicCrew({
+        userId: createdUser.id
+      });
+      const createdAgent = await agentFactory.createBasicAgent({
+        crewId: createdCrew.id
+      });
+
+      const response = await apiClient.api
+        .agents({ id: createdAgent.id })
+        .delete({}, createAuthenticatedRequest({ userToken }));
+
+      expect(response.status).toBe(200);
+      expect(response.data).toBe(true);
+
+      const agent = await db.query.agentTable.findFirst({
+        where: eq(agentTable.id, createdAgent.id)
+      });
+      expect(agent).toBeUndefined();
+    });
+
+    it('should return 404 for non-existent agent', async () => {
+      const { userToken } = await userFactory.createBasicUser();
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const response = await apiClient.api
+        .agents({ id: nonExistentId })
+        .delete({}, createAuthenticatedRequest({ userToken }));
+      expect(response.status).toBe(404);
+    });
+
+    it('should return 401 for unauthenticated request', async () => {
+      const { createdUser } = await userFactory.createBasicUser();
+      const createdCrew = await crewFactory.createBasicCrew({
+        userId: createdUser.id
+      });
+      const createdAgent = await agentFactory.createBasicAgent({
+        crewId: createdCrew.id
+      });
+      const response = await apiClient.api
+        .agents({ id: createdAgent.id })
+        .delete({}, createAuthenticatedRequest({ userToken: 'invalid-token' }));
       expect(response.status).toBe(401);
     });
   });

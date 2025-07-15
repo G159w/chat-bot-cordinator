@@ -1,8 +1,8 @@
 import type { Agent } from '$lib/server/db/schema';
 
 import { inject, injectable } from '@needle-di/core';
+import { err, ok, Result } from 'neverthrow';
 
-import { BadRequest } from '../utils/exceptions';
 import { AgentRepository } from './agent.repository';
 
 // Type for creating an agent that matches the DTO
@@ -23,12 +23,14 @@ type CreateAgentData = {
 export class AgentService {
   constructor(private readonly agentRepository = inject(AgentRepository)) {}
 
-  async createAgent(data: CreateAgentData): Promise<Agent> {
+  async createAgent(
+    data: CreateAgentData
+  ): Promise<Result<Agent, 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW'>> {
     // Validate that only one agent is coordinator per crew
     if (data.isCoordinator && data.crewId) {
       const existingCoordinator = await this.agentRepository.findCoordinatorByCrewId(data.crewId);
       if (existingCoordinator) {
-        throw BadRequest('Only one agent can be the coordinator per crew');
+        return err('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
       }
     }
 
@@ -46,31 +48,57 @@ export class AgentService {
       tools: data.tools ?? null
     };
 
-    return this.agentRepository.create(dbData);
+    const agent = await this.agentRepository.create(dbData);
+    return ok(agent);
   }
 
-  async deleteAgent(id: string): Promise<boolean> {
-    return this.agentRepository.delete(id);
+  async deleteAgent(id: string, userId: string): Promise<Result<boolean, 'AGENT_NOT_FOUND'>> {
+    const agent = await this.agentRepository.findById(id);
+    if (!agent) {
+      return err('AGENT_NOT_FOUND');
+    }
+
+    if (agent.crew.userId !== userId) {
+      return err('AGENT_NOT_FOUND');
+    }
+
+    const result = await this.agentRepository.delete(id);
+    return ok(result);
   }
 
-  async getAgentById(id: string): Promise<Agent | null> {
-    return this.agentRepository.findById(id);
+  async getAgentById(id: string): Promise<Result<Agent, 'AGENT_NOT_FOUND'>> {
+    const agent = await this.agentRepository.findById(id);
+    if (!agent) {
+      return err('AGENT_NOT_FOUND');
+    }
+
+    return ok(agent);
   }
 
-  async getAgentsByCrewAndUser(crewId: string, userId: string): Promise<Agent[]> {
-    return this.agentRepository.findByCrewIdAndUser(crewId, userId);
+  async getAgentsByCrewAndUser(
+    crewId: string,
+    userId: string
+  ): Promise<Result<Agent[], 'CREW_NOT_FOUND' | 'CREW_NOT_FOUND_OR_ACCESS_DENIED'>> {
+    // Note: This method assumes the crew exists and user has access
+    // The actual validation should be done at a higher level
+    const agents = await this.agentRepository.findByCrewIdAndUser(crewId, userId);
+    return ok(agents);
   }
 
-  async listAgents(crewId: string): Promise<Agent[]> {
-    return this.agentRepository.findByCrewId(crewId);
+  async listAgents(crewId: string): Promise<Result<Agent[], void>> {
+    const agents = await this.agentRepository.findByCrewId(crewId);
+    return ok(agents);
   }
 
-  async updateAgent(id: string, data: Partial<CreateAgentData>): Promise<Agent | null> {
+  async updateAgent(
+    id: string,
+    data: Partial<CreateAgentData>
+  ): Promise<Result<Agent, 'AGENT_NOT_FOUND' | 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW'>> {
     // If updating coordinator status, validate only one coordinator
     if (data.isCoordinator) {
       const agent = await this.agentRepository.findById(id);
       if (!agent) {
-        throw new Error('Agent not found');
+        return err('AGENT_NOT_FOUND');
       }
 
       if (agent.crewId) {
@@ -78,9 +106,15 @@ export class AgentService {
           agent.crewId
         );
         if (existingCoordinator && existingCoordinator.id !== id) {
-          throw new Error('Only one agent can be the coordinator per crew');
+          return err('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
         }
       }
+    }
+
+    // Check if agent exists
+    const existingAgent = await this.agentRepository.findById(id);
+    if (!existingAgent) {
+      return err('AGENT_NOT_FOUND');
     }
 
     // Transform undefined to null for database, only include provided fields
@@ -96,6 +130,10 @@ export class AgentService {
     if (data.temperature !== undefined) dbData.temperature = data.temperature ?? null;
     if (data.tools !== undefined) dbData.tools = data.tools ?? null;
 
-    return this.agentRepository.update(id, dbData);
+    const updatedAgent = await this.agentRepository.update(id, dbData);
+    if (!updatedAgent) {
+      return err('AGENT_NOT_FOUND');
+    }
+    return ok(updatedAgent);
   }
 }

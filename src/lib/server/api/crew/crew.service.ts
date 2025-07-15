@@ -1,9 +1,9 @@
 import type { Agent, Crew } from '$lib/server/db/schema';
 
 import { inject, injectable } from '@needle-di/core';
+import { err, ok, Result } from 'neverthrow';
 
 import { AgentRepository } from '../agent/agent.repository';
-import { NotFound } from '../utils/exceptions';
 import { CrewRepository } from './crew.repository';
 
 // Type for creating an agent that matches the DTO
@@ -33,15 +33,19 @@ export class CrewService {
     private readonly crewRepository = inject(CrewRepository)
   ) {}
 
-  async addAgentToCrew(crewId: string, userId: string, agentData: CreateAgentData): Promise<Agent> {
+  async addAgentToCrew(
+    crewId: string,
+    userId: string,
+    agentData: CreateAgentData
+  ): Promise<Result<Agent, 'CREW_NOT_FOUND_OR_ACCESS_DENIED'>> {
     // Verify crew belongs to user
     const crew = await this.crewRepository.findById(crewId, userId);
     if (!crew) {
-      throw NotFound('Crew not found or access denied');
+      return err('CREW_NOT_FOUND_OR_ACCESS_DENIED');
     }
 
     if (crew.userId !== userId) {
-      throw NotFound('Crew not found or access denied');
+      return err('CREW_NOT_FOUND_OR_ACCESS_DENIED');
     }
 
     // Get current agents to determine order
@@ -59,19 +63,23 @@ export class CrewService {
       tools: agentData.tools ?? null
     };
 
-    return this.agentRepository.create(dbAgentData);
+    const agent = await this.agentRepository.create(dbAgentData);
+    return ok(agent);
   }
 
-  async createCrew(userId: string, data: CreateCrewData): Promise<Crew> {
+  async createCrew(
+    userId: string,
+    data: CreateCrewData
+  ): Promise<Result<Crew, 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR'>> {
     if (data.agents && data.agents.length > 0) {
       // Validate that only one agent is coordinator
-      const coordinators = data.agents.filter((agent) => agent.isCoordinator);
+      const coordinators = data.agents.filter((agent: CreateAgentData) => agent.isCoordinator);
       if (coordinators.length > 1) {
-        throw new Error('Only one agent can be the coordinator');
+        return err('ONLY_ONE_AGENT_CAN_BE_COORDINATOR');
       }
 
       // Transform agents data for database
-      const dbAgents = data.agents.map((agent) => ({
+      const dbAgents = data.agents.map((agent: CreateAgentData) => ({
         ...agent,
         description: agent.description ?? null,
         isCoordinator: agent.isCoordinator ?? null,
@@ -80,83 +88,96 @@ export class CrewService {
         tools: agent.tools ?? null
       }));
 
-      return this.crewRepository.createWithAgents({
+      const crew = await this.crewRepository.createWithAgents({
         agents: dbAgents,
         description: data.description,
         name: data.name,
         userId
       });
+      return ok(crew);
     } else {
-      return this.crewRepository.create({
+      const crew = await this.crewRepository.create({
         description: data.description,
         name: data.name,
         userId
       });
+      return ok(crew);
     }
   }
 
-  async deleteCrew(id: string, userId: string): Promise<boolean> {
+  async deleteCrew(id: string, userId: string): Promise<Result<boolean, 'CREW_NOT_FOUND'>> {
     const crew = await this.crewRepository.findById(id, userId);
     if (!crew) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
-    return this.crewRepository.delete(id, userId);
+    const result = await this.crewRepository.delete(id, userId);
+    return ok(result);
   }
 
-  async getCrewAgents(crewId: string, userId: string): Promise<Agent[]> {
+  async getCrewAgents(crewId: string, userId: string): Promise<Result<Agent[], 'CREW_NOT_FOUND'>> {
     const crew = await this.crewRepository.findById(crewId, userId);
     if (!crew) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
     if (crew.userId !== userId) {
-      throw NotFound('Crew not found or access denied');
+      return err('CREW_NOT_FOUND');
     }
 
-    return this.agentRepository.findByCrewIdAndUser(crewId, userId);
+    const agents = await this.agentRepository.findByCrewIdAndUser(crewId, userId);
+    return ok(agents);
   }
 
-  async getCrewById(id: string, userId: string): Promise<Crew> {
+  async getCrewById(id: string, userId: string): Promise<Result<Crew, 'CREW_NOT_FOUND'>> {
     const crew = await this.crewRepository.findById(id, userId);
     if (!crew) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
-    return crew;
+    return ok(crew);
   }
 
   async getCrewWithAgents(
     id: string,
     userId: string
-  ): Promise<null | {
-    agents: Agent[];
-    crew: Crew;
-  }> {
+  ): Promise<Result<Crew & { agents: Agent[] }, 'CREW_NOT_FOUND'>> {
     const crew = await this.crewRepository.getCrewWithAgents(id, userId);
     if (!crew) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
-    return crew;
+    return ok(crew);
   }
 
-  async listCrews(userId: string): Promise<Crew[]> {
-    return this.crewRepository.findByUserId(userId);
+  async listCrews(userId: string): Promise<Result<Crew[], void>> {
+    const crews = await this.crewRepository.findByUserId(userId);
+    return ok(crews);
   }
 
-  async updateAgentOrder(
+  async removeAgentFromCrew(
     crewId: string,
-    userId: string,
-    agentOrders: { id: string; order: number }[]
-  ): Promise<void> {
+    agentId: string,
+    userId: string
+  ): Promise<Result<boolean, 'AGENT_NOT_FOUND_IN_CREW' | 'CREW_NOT_FOUND_OR_ACCESS_DENIED'>> {
     // Verify crew belongs to user
     const crew = await this.crewRepository.findById(crewId, userId);
     if (!crew) {
-      throw new Error('Crew not found or access denied');
+      return err('CREW_NOT_FOUND_OR_ACCESS_DENIED');
     }
 
-    await this.agentRepository.updateOrder(crewId, agentOrders);
+    if (crew.userId !== userId) {
+      return err('CREW_NOT_FOUND_OR_ACCESS_DENIED');
+    }
+
+    // Verify agent belongs to crew
+    const agent = await this.agentRepository.findById(agentId);
+    if (!agent || agent.crewId !== crewId) {
+      return err('AGENT_NOT_FOUND_IN_CREW');
+    }
+
+    const result = await this.agentRepository.delete(agentId);
+    return ok(result);
   }
 
   async updateCrew(
@@ -167,7 +188,7 @@ export class CrewService {
       isActive?: boolean;
       name?: string;
     }
-  ): Promise<Crew | null> {
+  ): Promise<Result<Crew, 'CREW_NOT_FOUND'>> {
     // Only include provided fields
     const dbData: { description?: string; isActive?: boolean; name?: string } = {};
     if (data.description !== undefined) dbData.description = data.description;
@@ -177,14 +198,15 @@ export class CrewService {
     // check if crew exists
     const crew = await this.crewRepository.findById(id, userId);
     if (!crew) {
-      throw NotFound('Crew not found');
+      return err('CREW_NOT_FOUND');
     }
 
     // check if crew belongs to user
     if (crew.userId !== userId) {
-      throw NotFound('Crew not found or access denied');
+      return err('CREW_NOT_FOUND');
     }
 
-    return this.crewRepository.update(id, userId, dbData);
+    const updatedCrew = await this.crewRepository.update(id, userId, dbData);
+    return ok(updatedCrew);
   }
 }

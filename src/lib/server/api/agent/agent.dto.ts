@@ -36,7 +36,26 @@ export const createAgentRequestSchema = t.Object({
   tools: t.Optional(t.Array(t.String(), { description: 'List of tools available to the agent' }))
 });
 
+export const updateAgentRequestSchema = t.Object({
+  description: t.Optional(t.String({ description: 'Optional description of the agent' })),
+  instructions: t.Optional(t.String({ description: 'Instructions for the agent to follow' })),
+  isCoordinator: t.Optional(
+    t.Boolean({ description: 'Whether this agent coordinates the workflow' })
+  ),
+  model: t.Optional(t.String({ description: 'AI model to use for this agent' })),
+  name: t.Optional(t.String({ description: 'Name of the agent' })),
+  order: t.Optional(t.Number({ description: 'Execution order of the agent in the workflow' })),
+  role: t.Optional(t.String({ description: 'Role of the agent in the workflow' })),
+  temperature: t.Optional(t.Number({ description: 'Temperature setting for the AI model' })),
+  tools: t.Optional(t.Array(t.String(), { description: 'List of tools available to the agent' }))
+});
+
 // Query schemas
 export const agentListQuerySchema = t.Object({
   crewId: t.String({ description: 'ID of the crew to list agents for' })
+});
+
+// Parameter schemas
+export const agentIdParamSchema = t.Object({
+  id: t.String({ description: 'Unique identifier of the agent' })
 });

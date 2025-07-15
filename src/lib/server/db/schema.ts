@@ -10,6 +10,7 @@ import {
   timestamp,
   uuid
 } from 'drizzle-orm/pg-core';
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-typebox';
 
 export const userTable = pgTable('user', {
   email: text('email').unique(),
@@ -20,6 +21,9 @@ export const userTable = pgTable('user', {
   image: text('image'),
   name: text('name')
 });
+
+export const userSelectSchema = createSelectSchema(userTable);
+export const userInsertSchema = createInsertSchema(userTable);
 
 export const accountTable = pgTable(
   'account',
@@ -106,6 +110,10 @@ export const crewTable = pgTable('crew', {
     .notNull()
     .references(() => userTable.id)
 });
+
+export const crewSelectSchema = createSelectSchema(crewTable);
+export const crewInsertSchema = createInsertSchema(crewTable);
+export const crewUpdateSchema = createUpdateSchema(crewTable);
 
 export const agentTable = pgTable('agent', {
   createdAt: timestamp('created_at').defaultNow(),

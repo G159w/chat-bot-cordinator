@@ -1,38 +1,96 @@
-# sv
+# Self Chat Bot
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A crew-based AI agent system built with SvelteKit and Svelte Flow.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Crew Management**: Create and manage AI agent crews
+- **Agent Workflows**: Visualize crew and agent relationships using Svelte Flow
+- **Real-time Execution**: Monitor agent execution status
+- **Modern UI**: Built with Tailwind CSS and modern design patterns
 
-```bash
-# create a new project in the current directory
-npx sv create
+## Crew Flow Visualization
 
-# create a new project in my-app
-npx sv create my-app
+The application uses [Svelte Flow](https://svelteflow.dev/) to create interactive workflow diagrams that visualize:
+
+- **Crew Node**: The main crew entity at the top of the diagram
+- **Agent Nodes**: Individual AI agents with their roles, models, and tools
+- **Execution Flow**: Animated connections showing the sequence of agent execution
+- **Management Relationships**: Connections showing how the crew manages its agents
+
+### Features of the Crew Flow
+
+1. **Interactive Nodes**: Click and drag nodes to rearrange the workflow
+2. **Animated Edges**: Visual flow indicators with animated connections
+3. **Coordinator Highlighting**: Special styling for coordinator agents
+4. **Tool Information**: Display of agent tools and capabilities
+5. **Zoom and Pan**: Full navigation controls for large workflows
+6. **Mini Map**: Overview of the entire workflow
+7. **Responsive Design**: Adapts to different screen sizes
+
+### Node Types
+
+- **Crew Node**: Blue gradient background, represents the crew entity
+- **Agent Nodes**: White background with role and model information
+- **Coordinator Agents**: Purple border and background highlighting
+
+### Edge Types
+
+- **Management Edges**: Blue connections from crew to agents
+- **Execution Edges**: Green connections showing agent execution order
+
+## Getting Started
+
+1. Install dependencies:
+
+   ```bash
+   bun install
+   ```
+
+2. Start the development server:
+
+   ```bash
+   bun run dev
+   ```
+
+3. Open your browser and navigate to the dashboard to see crew workflows.
+
+## Technology Stack
+
+- **Frontend**: SvelteKit 5, Svelte Flow, Tailwind CSS
+- **Backend**: Elysia.js, Drizzle ORM
+- **Database**: PostgreSQL
+- **Authentication**: Auth.js
+- **Package Manager**: Bun
+
+## Project Structure
+
+```
+src/
+├── lib/
+│   ├── components/
+│   │   └── CrewFlow.svelte    # Svelte Flow crew visualization
+│   ├── server/
+│   │   ├── api/
+│   │   │   ├── crew/          # Crew API endpoints
+│   │   │   └── agent/         # Agent API endpoints
+│   │   └── db/                # Database schema and migrations
+│   └── crew.remote.ts         # Client-side crew data fetching
+└── routes/
+    └── (app)/
+        └── dashboard/
+            └── [id]/
+                └── +page.svelte  # Crew dashboard with flow visualization
 ```
 
-## Developing
+## Contributing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-```bash
-npm run dev
+## License
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+MIT License - see LICENSE file for details.
