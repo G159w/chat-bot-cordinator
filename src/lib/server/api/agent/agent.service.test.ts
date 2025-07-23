@@ -159,7 +159,7 @@ describe('AgentService', () => {
       await agentFactory.createBasicAgent({ crewId: createdCrew.id });
       await agentFactory.createBasicAgent({ crewId: createdCrew.id });
 
-      const result = await agentService.listAgents(createdCrew.id);
+      const result = await agentService.listAgents(createdCrew.id, createdUser.id);
       const agents = result._unsafeUnwrap();
 
       expect(agents).toBeDefined();
@@ -176,7 +176,7 @@ describe('AgentService', () => {
         userId: createdUser.id
       });
 
-      const result = await agentService.listAgents(createdCrew.id);
+      const result = await agentService.listAgents(createdCrew.id, createdUser.id);
       const agents = result._unsafeUnwrap();
 
       expect(agents).toBeDefined();

@@ -11,10 +11,10 @@ import { Elysia } from 'elysia';
 
 import { AgentController } from './agent/agent.controller';
 import { CrewController } from './crew/crew.controller';
+import { FlowController } from './flow/flow.controller';
 import { Logger } from './logger';
 import { AuthGuard } from './utils/auth';
 import { HttpErrorHandler } from './utils/exceptions';
-import { WorkflowController } from './workflow/workflow.controller';
 
 // Initialize PostgreSQL instrumentation
 const pgInstrumentation = new PgInstrumentation({
@@ -48,7 +48,7 @@ export class ApiController {
   constructor(
     private readonly agentController = inject(AgentController),
     private readonly crewController = inject(CrewController),
-    private readonly workflowController = inject(WorkflowController),
+    private readonly flowController = inject(FlowController),
     private readonly logger = inject(Logger),
     private readonly httpErrorHandler = inject(HttpErrorHandler),
     private readonly authGuard = inject(AuthGuard)
@@ -62,7 +62,7 @@ export class ApiController {
       .use(this.httpErrorHandler.handle)
       .use(this.agentController.getControllerApp)
       .use(this.crewController.getControllerApp)
-      .use(this.workflowController.getControllerApp);
+      .use(this.flowController.getControllerApp);
   }
 
   getBaseApp() {

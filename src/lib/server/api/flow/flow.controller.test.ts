@@ -3,25 +3,22 @@ import { describe, expect, it } from 'bun:test';
 
 import { createAuthenticatedRequest } from '../../test/helpers';
 
-describe('Workflow Controller', () => {
-  const { agentFactory, apiClient, crewFactory, userFactory } = testingModule;
+describe('Flow Controller', () => {
+  const { apiClient, crewFactory, flowFactory, userFactory } = testingModule;
 
-  describe('POST /api/workflows/execute', () => {
-    it('should execute a workflow successfully', async () => {
+  describe('POST /api/flows/execute', () => {
+    it('should execute a flow successfully', async () => {
       const { createdUser, userToken } = await userFactory.createBasicUser();
-      const createdCrew = await crewFactory.createBasicCrew({
-        userId: createdUser.id
-      });
-      const _createdAgent = await agentFactory.createBasicAgent({
-        crewId: createdCrew.id
-      });
+      const createdCrew = await crewFactory.createBasicCrew({ userId: createdUser.id });
+      const createdFlow = await flowFactory.createBasicFlow({ crewId: createdCrew.id });
+      const _createdTask = await flowFactory.createBasicTask({ flowId: createdFlow.id });
 
       const executeData = {
-        crewId: createdCrew.id,
-        input: 'Test workflow input'
+        flowId: createdFlow.id,
+        input: { text: 'Test flow input' }
       };
 
-      const response = await apiClient.api.workflows.execute.post(
+      const response = await apiClient.api.flows.execute.post(
         executeData,
         createAuthenticatedRequest({ userToken })
       );
@@ -32,14 +29,14 @@ describe('Workflow Controller', () => {
       expect(typeof response.data?.executionId).toBe('string');
     });
 
-    it('should return 404 for non-existent crew', async () => {
+    it('should return 404 for non-existent flow', async () => {
       const { userToken } = await userFactory.createBasicUser();
       const executeData = {
-        crewId: '550e8400-e29b-41d4-a716-446655440000',
-        input: 'Test workflow input'
+        flowId: '550e8400-e29b-41d4-a716-446655440000',
+        input: { text: 'Test flow input' }
       };
 
-      const response = await apiClient.api.workflows.execute.post(
+      const response = await apiClient.api.flows.execute.post(
         executeData,
         createAuthenticatedRequest({ userToken })
       );
@@ -48,18 +45,17 @@ describe('Workflow Controller', () => {
       expect(response.error).toBeDefined();
     });
 
-    it('should return 400 for crew with no agents', async () => {
+    it('should return 400 for flow with no tasks', async () => {
       const { createdUser, userToken } = await userFactory.createBasicUser();
-      const createdCrew = await crewFactory.createBasicCrew({
-        userId: createdUser.id
-      });
+      const createdCrew = await crewFactory.createBasicCrew({ userId: createdUser.id });
+      const createdFlow = await flowFactory.createBasicFlow({ crewId: createdCrew.id });
 
       const executeData = {
-        crewId: createdCrew.id,
-        input: 'Test workflow input'
+        flowId: createdFlow.id,
+        input: { text: 'Test flow input' }
       };
 
-      const response = await apiClient.api.workflows.execute.post(
+      const response = await apiClient.api.flows.execute.post(
         executeData,
         createAuthenticatedRequest({ userToken })
       );
@@ -70,11 +66,11 @@ describe('Workflow Controller', () => {
 
     it('should return 401 for unauthenticated request', async () => {
       const executeData = {
-        crewId: 'test-crew-123',
-        input: 'Test workflow input'
+        flowId: 'test-flow-123',
+        input: { text: 'Test flow input' }
       };
 
-      const response = await apiClient.api.workflows.execute.post(
+      const response = await apiClient.api.flows.execute.post(
         executeData,
         createAuthenticatedRequest({ userToken: 'test-user-123' })
       );
@@ -83,21 +79,18 @@ describe('Workflow Controller', () => {
     });
   });
 
-  describe('GET /api/workflows/:id', () => {
-    it('should return workflow execution status', async () => {
+  describe('GET /api/flows/executions/:id', () => {
+    it('should return flow execution status', async () => {
       const { createdUser, userToken } = await userFactory.createBasicUser();
-      const createdCrew = await crewFactory.createBasicCrew({
-        userId: createdUser.id
-      });
-      const _createdAgent = await agentFactory.createBasicAgent({
-        crewId: createdCrew.id
-      });
+      const createdCrew = await crewFactory.createBasicCrew({ userId: createdUser.id });
+      const createdFlow = await flowFactory.createBasicFlow({ crewId: createdCrew.id });
+      const _createdTask = await flowFactory.createBasicTask({ flowId: createdFlow.id });
 
-      // First execute a workflow
-      const executeResponse = await apiClient.api.workflows.execute.post(
+      // First execute a flow
+      const executeResponse = await apiClient.api.flows.execute.post(
         {
-          crewId: createdCrew.id,
-          input: 'Test workflow input'
+          flowId: createdFlow.id,
+          input: { text: 'Test flow input' }
         },
         createAuthenticatedRequest({ userToken })
       );
@@ -107,24 +100,24 @@ describe('Workflow Controller', () => {
       expect(executionId).toBeTruthy();
 
       // Then get the execution status
-      const response = await apiClient.api.workflows({ id: executionId }).get({
+      const response = await apiClient.api.flows.executions({ id: executionId }).get({
         ...createAuthenticatedRequest({ userToken })
       });
 
       expect(response.status).toBe(200);
       expect(response.data).toBeDefined();
       expect(response.data?.id).toBe(executionId);
-      expect(response.data?.crewId).toBe(createdCrew.id);
-      expect(response.data?.input).toBe('Test workflow input');
+      expect(response.data?.flowId).toBe(createdFlow.id);
+      expect(response.data?.input).toEqual({ text: 'Test flow input' });
       expect(response.data?.userId).toBe(createdUser.id);
       expect(response.data?.status).toBeDefined();
-      expect(response.data?.startedAt).toBeDefined();
+      expect(response.data?.createdAt).toBeDefined();
     });
 
     it('should return 404 for non-existent execution', async () => {
       const { userToken } = await userFactory.createBasicUser();
-      const response = await apiClient.api
-        .workflows({ id: '550e8400-e29b-41d4-a716-446655440000' })
+      const response = await apiClient.api.flows
+        .executions({ id: '550e8400-e29b-41d4-a716-446655440000' })
         .get({
           ...createAuthenticatedRequest({ userToken })
         });
@@ -134,7 +127,7 @@ describe('Workflow Controller', () => {
     });
 
     it('should return 401 for unauthenticated request', async () => {
-      const response = await apiClient.api.workflows({ id: 'test-execution-123' }).get({
+      const response = await apiClient.api.flows.executions({ id: 'test-execution-123' }).get({
         ...createAuthenticatedRequest({ userToken: 'test-user-123' })
       });
 
@@ -142,21 +135,18 @@ describe('Workflow Controller', () => {
     });
   });
 
-  describe('GET /api/workflows/:id/details', () => {
-    it('should return workflow execution with details', async () => {
+  describe('GET /api/flows/executions/:id/details', () => {
+    it('should return flow execution with details', async () => {
       const { createdUser, userToken } = await userFactory.createBasicUser();
-      const createdCrew = await crewFactory.createBasicCrew({
-        userId: createdUser.id
-      });
-      const _createdAgent = await agentFactory.createBasicAgent({
-        crewId: createdCrew.id
-      });
+      const createdCrew = await crewFactory.createBasicCrew({ userId: createdUser.id });
+      const createdFlow = await flowFactory.createBasicFlow({ crewId: createdCrew.id });
+      const _createdTask = await flowFactory.createBasicTask({ flowId: createdFlow.id });
 
-      // First execute a workflow
-      const executeResponse = await apiClient.api.workflows.execute.post(
+      // First execute a flow
+      const executeResponse = await apiClient.api.flows.execute.post(
         {
-          crewId: createdCrew.id,
-          input: 'Test workflow input'
+          flowId: createdFlow.id,
+          input: { text: 'Test flow input' }
         },
         createAuthenticatedRequest({ userToken })
       );
@@ -166,22 +156,22 @@ describe('Workflow Controller', () => {
       expect(executionId).toBeTruthy();
 
       // Then get the execution details
-      const response = await apiClient.api.workflows({ id: executionId! })['details'].get({
+      const response = await apiClient.api.flows.executions({ id: executionId! })['details'].get({
         ...createAuthenticatedRequest({ userToken })
       });
 
       expect(response.status).toBe(200);
       expect(response.data).toBeDefined();
       expect(response.data?.execution.id).toBe(executionId!);
-      expect(response.data?.execution.crewId).toBe(createdCrew.id);
-      expect(response.data?.agentExecutions).toBeDefined();
-      expect(Array.isArray(response.data?.agentExecutions)).toBe(true);
+      expect(response.data?.execution.flowId).toBe(createdFlow.id);
+      expect(response.data?.taskExecutions).toBeDefined();
+      expect(Array.isArray(response.data?.taskExecutions)).toBe(true);
     });
 
     it('should return 404 for non-existent execution', async () => {
       const { userToken } = await userFactory.createBasicUser();
-      const response = await apiClient.api
-        .workflows({ id: '550e8400-e29b-41d4-a716-446655440000' })
+      const response = await apiClient.api.flows
+        .executions({ id: '550e8400-e29b-41d4-a716-446655440000' })
         ['details'].get({
           ...createAuthenticatedRequest({ userToken })
         });
@@ -191,9 +181,11 @@ describe('Workflow Controller', () => {
     });
 
     it('should return 401 for unauthenticated request', async () => {
-      const response = await apiClient.api.workflows({ id: 'test-execution-123' })['details'].get({
-        ...createAuthenticatedRequest({ userToken: 'test-user-123' })
-      });
+      const response = await apiClient.api.flows
+        .executions({ id: 'test-execution-123' })
+        ['details'].get({
+          ...createAuthenticatedRequest({ userToken: 'test-user-123' })
+        });
 
       expect(response.status).toBe(401);
     });

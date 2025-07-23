@@ -2,7 +2,6 @@
 
 @import 'tw-animate-css';
 
-
 :root {
   --radius: 0.65rem;
   --background: oklch(0.141 0.005 285.823);

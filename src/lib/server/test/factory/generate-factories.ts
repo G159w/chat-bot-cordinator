@@ -1,19 +1,19 @@
 import { TestDbService } from '../mock.service';
 import { AgentFactory } from './agent.factory';
 import { CrewFactory } from './crew.factory';
+import { FlowFactory } from './flow.factory';
 import { UserFactory } from './user.factory';
-import { WorkflowFactory } from './workflow.factory';
 
 export const generateFactories = (dbService: TestDbService) => {
-  const agentFactory = new AgentFactory(dbService);
-  const crewFactory = new CrewFactory(dbService);
   const userFactory = new UserFactory(dbService);
-  const workflowFactory = new WorkflowFactory(dbService);
+  const crewFactory = new CrewFactory(dbService, userFactory);
+  const agentFactory = new AgentFactory(dbService);
+  const flowFactory = new FlowFactory(dbService, crewFactory, userFactory);
 
   return {
     agentFactory,
     crewFactory,
-    userFactory,
-    workflowFactory
+    flowFactory,
+    userFactory
   };
 };

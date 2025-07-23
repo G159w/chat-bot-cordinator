@@ -3,6 +3,7 @@ import type { Agent } from '$lib/server/db/schema';
 import { inject, injectable } from '@needle-di/core';
 import { err, ok, Result } from 'neverthrow';
 
+import { CrewRepository } from '../crew/crew.repository';
 import { AgentRepository } from './agent.repository';
 
 // Type for creating an agent that matches the DTO
@@ -21,7 +22,10 @@ type CreateAgentData = {
 
 @injectable()
 export class AgentService {
-  constructor(private readonly agentRepository = inject(AgentRepository)) {}
+  constructor(
+    private readonly agentRepository = inject(AgentRepository),
+    private readonly crewRepository = inject(CrewRepository)
+  ) {}
 
   async createAgent(
     data: CreateAgentData
@@ -85,7 +89,12 @@ export class AgentService {
     return ok(agents);
   }
 
-  async listAgents(crewId: string): Promise<Result<Agent[], void>> {
+  async listAgents(crewId: string, userId: string): Promise<Result<Agent[], 'CREW_NOT_FOUND'>> {
+    const crew = await this.crewRepository.findById(crewId, userId);
+    if (!crew) {
+      return err('CREW_NOT_FOUND');
+    }
+
     const agents = await this.agentRepository.findByCrewId(crewId);
     return ok(agents);
   }

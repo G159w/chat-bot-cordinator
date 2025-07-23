@@ -24,12 +24,14 @@ export class AgentController {
     return app
       .get(
         '/agents',
-        async ({ query }) => {
-          const result = await this.agentService.listAgents(query.crewId);
+        async ({ query, user }) => {
+          const result = await this.agentService.listAgents(query.crewId, user.id);
           return result.match(
             (agents) => agents,
             (error) => {
               switch (error) {
+                case 'CREW_NOT_FOUND':
+                  throw NotFound('Crew not found');
                 default:
                   throw failShouldNotHappen();
               }
@@ -45,7 +47,8 @@ export class AgentController {
           },
           query: agentListQuerySchema,
           response: {
-            200: agentListResponseSchema
+            200: agentListResponseSchema,
+            404: errorSchema('CREW_NOT_FOUND')
           }
         }
       )

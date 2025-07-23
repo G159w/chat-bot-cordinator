@@ -1,5 +1,7 @@
 import { faker } from '@faker-js/faker';
 
+import type { UserFactory } from './user.factory';
+
 import * as schema from '../../db/schema';
 // Types for crew factory
 import { TestDbService } from '../mock.service';
@@ -31,16 +33,24 @@ export interface CrewWithAgentsData extends CreateCrewData {
 
 export class CrewFactory {
   private dbService: TestDbService;
+  private userFactory: UserFactory;
 
-  constructor(dbService: TestDbService) {
+  constructor(dbService: TestDbService, userFactory: UserFactory) {
     this.dbService = dbService;
+    this.userFactory = userFactory;
   }
 
   /**
    * Creates a basic crew with minimal required data
    */
   async createBasicCrew(overrides: Partial<CreateCrewData> = {}): Promise<Crew> {
-    const crewData = this.createBasicCrewData(overrides);
+    let userId = overrides.userId;
+    if (!userId) {
+      // Use userFactory to create a valid user if not provided
+      const { createdUser } = await this.userFactory.createBasicUser();
+      userId = createdUser.id;
+    }
+    const crewData = this.createBasicCrewData({ ...overrides, userId });
     const result = await this.dbService.db.insert(schema.crewTable).values(crewData).returning();
     return result[0];
   }
@@ -95,20 +105,23 @@ export class CrewFactory {
     overrides: Partial<CreateCrewData> = {}
   ): Promise<Crew[]> {
     const crews: Crew[] = [];
-
+    let userId = overrides.userId;
+    if (!userId) {
+      // Use userFactory to create a valid user if not provided
+      const { createdUser } = await this.userFactory.createBasicUser();
+      userId = createdUser.id;
+    }
     for (let i = 0; i < count; i++) {
       const crewData: CreateCrewData = {
         description: faker.lorem.sentence(),
         isActive: faker.datatype.boolean(),
         name: faker.company.name(),
-        userId: faker.string.uuid(),
+        userId,
         ...overrides
       };
-
       const result = await this.dbService.db.insert(schema.crewTable).values(crewData).returning();
       crews.push(result[0]);
     }
-
     return crews;
   }
 

@@ -52,10 +52,10 @@ export const updateAgentRequestSchema = t.Object({
 
 // Query schemas
 export const agentListQuerySchema = t.Object({
-  crewId: t.String({ description: 'ID of the crew to list agents for' })
+  crewId: t.String({ description: 'ID of the crew to list agents for', format: 'uuid' })
 });
 
 // Parameter schemas
 export const agentIdParamSchema = t.Object({
-  id: t.String({ description: 'Unique identifier of the agent' })
+  id: t.String({ description: 'Unique identifier of the agent', format: 'uuid' })
 });
