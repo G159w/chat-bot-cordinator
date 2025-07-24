@@ -15,9 +15,12 @@ export class AuthGuard {
   }
 
   useGuard() {
+    const userRepository = this.userRepository;
+    const logger = this.logger;
+
     return new Elysia({
       name: 'authGuard'
-    }).derive({ as: 'global' }, async ({ headers }) => {
+    }).derive({ as: 'global' }, async function authGuard({ headers }) {
       if (!headers.authorization) {
         throw Unauthorized();
       }
@@ -25,11 +28,11 @@ export class AuthGuard {
       if (!token) {
         throw Unauthorized();
       }
-      const user = await this.userRepository.findUserBySessionToken(token);
+      const user = await userRepository.findUserBySessionToken(token);
       if (!user) {
         throw Unauthorized();
       }
-      this.logger.withContext({ userId: user.id });
+      logger.withContext({ userId: user.id });
       return { user };
     });
   }

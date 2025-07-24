@@ -107,14 +107,16 @@ export class HttpErrorHandler {
   }
 
   handleError(app: AuthGuardedApp) {
+    const logger = this.logger;
+
     return app
       .error({
         ELYSIA_HTTP_ERROR: HttpError
       })
-      .onError({ as: 'global' }, ({ code, error, set }) => {
+      .onError({ as: 'global' }, function onError({ code, error, set }) {
         if (code === 'ELYSIA_HTTP_ERROR') {
           set.status = error.statusCode;
-          this.logger.withMetadata(error).error(error.message);
+          logger.withMetadata(error).error(error.message);
           return {
             code: error.statusCode,
             data: error.errorData,
@@ -122,7 +124,7 @@ export class HttpErrorHandler {
             message: error.message
           };
         } else {
-          this.logger.withMetadata(error).error('Unhandled error');
+          logger.withMetadata(error).error('Unhandled error');
           return {
             code: StatusCodes.INTERNAL_SERVER_ERROR,
             data: error,
