@@ -4,7 +4,7 @@
   import { deleteCrew } from '$lib/remote/crew.remote';
   import { Trash2 } from '@lucide/svelte';
 
-  import { Button } from '../../ui/button';
+  import { Button } from '../../../ui/button';
 
   let open = $state(false);
 

@@ -12,7 +12,7 @@ const container = new Container().bind({
 });
 
 const apiController = container.get(ApiController);
-const db = container.get(DbService).db;
+const dbService = container.get(DbService);
 
 // For typing purposes
 const _authGuardedApp = () => new Elysia().use(container.get(AuthGuard).useGuard);
@@ -24,4 +24,4 @@ const serverApiClient = treaty(app);
 
 type App = typeof app;
 
-export { app, type App, db, serverApiClient };
+export { app, type App, dbService, serverApiClient };

@@ -59,7 +59,7 @@ export class ApiController {
 
   getApp(app: typeof this.baseApp) {
     return app
-      .use(this.httpErrorHandler.handle)
+      .use(this.httpErrorHandler.handleError)
       .use(this.agentController.getControllerApp)
       .use(this.crewController.getControllerApp)
       .use(this.flowController.getControllerApp);

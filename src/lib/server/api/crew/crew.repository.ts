@@ -6,7 +6,10 @@ import { inject, injectable } from '@needle-di/core';
 import { Value } from '@sinclair/typebox/value';
 import { and, eq } from 'drizzle-orm';
 
+import { opentelemetry } from '../utils/opentelemetry.decorator';
+
 @injectable()
+@opentelemetry()
 export class CrewRepository extends DbRepository {
   constructor(dbService = inject(DbService)) {
     super(dbService);

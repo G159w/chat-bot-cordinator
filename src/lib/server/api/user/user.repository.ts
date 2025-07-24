@@ -3,7 +3,10 @@ import * as schema from '$lib/server/db/schema';
 import { inject, injectable } from '@needle-di/core';
 import { eq } from 'drizzle-orm';
 
+import { opentelemetry } from '../utils/opentelemetry.decorator';
+
 @injectable()
+@opentelemetry()
 export class UserRepository extends DbRepository {
   constructor(dbService = inject(DbService)) {
     super(dbService);

@@ -1,4 +1,4 @@
-import { upsertAgentSchema } from '$lib/components/app/crew/upsert-agent.schema';
+import { upsertAgentSchema } from '$lib/components/app/crew/crew-overview/upsert-agent.schema.js';
 import { fail } from '@sveltejs/kit';
 import { superValidate } from 'sveltekit-superforms';
 import { valibot } from 'sveltekit-superforms/adapters';

@@ -5,11 +5,14 @@ import { agentTable, crewTable } from '$lib/server/db/schema';
 import { inject, injectable } from '@needle-di/core';
 import { and, eq } from 'drizzle-orm';
 
+import { opentelemetry } from '../utils/opentelemetry.decorator';
+
 type AgentWithCrew = Agent & {
   crew: Crew;
 };
 
 @injectable()
+@opentelemetry()
 export class AgentRepository extends DbRepository {
   constructor(dbService = inject(DbService)) {
     super(dbService);

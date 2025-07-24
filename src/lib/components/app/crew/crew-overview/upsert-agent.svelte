@@ -9,9 +9,9 @@
   import { type Infer, superForm, type SuperValidated } from 'sveltekit-superforms';
   import { valibotClient } from 'sveltekit-superforms/adapters';
 
-  import { Button } from '../../ui/button';
-  import { Input } from '../../ui/input';
-  import { Textarea } from '../../ui/textarea';
+  import { Button } from '../../../ui/button';
+  import { Input } from '../../../ui/input';
+  import { Textarea } from '../../../ui/textarea';
   import { agentModels, upsertAgentSchema, type UpsertAgentSchema } from './upsert-agent.schema';
 
   export type Agent = {

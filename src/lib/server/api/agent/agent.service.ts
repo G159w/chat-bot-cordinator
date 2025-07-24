@@ -4,6 +4,7 @@ import { inject, injectable } from '@needle-di/core';
 import { err, ok, Result } from 'neverthrow';
 
 import { CrewRepository } from '../crew/crew.repository';
+import { opentelemetry } from '../utils/opentelemetry.decorator';
 import { AgentRepository } from './agent.repository';
 
 // Type for creating an agent that matches the DTO
@@ -21,6 +22,7 @@ type CreateAgentData = {
 };
 
 @injectable()
+@opentelemetry()
 export class AgentService {
   constructor(
     private readonly agentRepository = inject(AgentRepository),

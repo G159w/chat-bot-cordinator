@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { QueryClientProvider } from '@tanstack/svelte-query';
   import '@xyflow/svelte/dist/style.css';
 
   import '../../app.css';
@@ -24,8 +23,6 @@
   <meta property="og:image" content="https://agent-coordinator.com/logo.png" />
 </svelte:head>
 
-<QueryClientProvider client={data.queryClient}>
-  <div class="flex h-screen flex-col items-center justify-center">
-    {@render children()}
-  </div>
-</QueryClientProvider>
+<div class="flex h-screen flex-col items-center justify-center">
+  {@render children()}
+</div>

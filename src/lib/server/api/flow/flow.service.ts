@@ -4,6 +4,7 @@ import { inject, injectable } from '@needle-di/core';
 import { err, ok, Result } from 'neverthrow';
 
 import { CrewRepository } from '../crew/crew.repository';
+import { opentelemetry } from '../utils/opentelemetry.decorator';
 import {
   FlowExecutionRepository,
   FlowRepository,
@@ -12,6 +13,7 @@ import {
 } from './flow.repository';
 
 @injectable()
+@opentelemetry()
 export class FlowService {
   constructor(
     private readonly crewRepository = inject(CrewRepository),

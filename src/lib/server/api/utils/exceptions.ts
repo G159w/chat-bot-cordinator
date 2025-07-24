@@ -103,10 +103,10 @@ export function UnsupportedMediaType(message?: string, errorData?: unknown) {
 @injectable()
 export class HttpErrorHandler {
   constructor(private readonly logger = inject(Logger)) {
-    this.handle = this.handle.bind(this);
+    this.handleError = this.handleError.bind(this);
   }
 
-  handle(app: AuthGuardedApp) {
+  handleError(app: AuthGuardedApp) {
     return app
       .error({
         ELYSIA_HTTP_ERROR: HttpError

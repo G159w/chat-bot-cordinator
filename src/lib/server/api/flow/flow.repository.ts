@@ -23,7 +23,10 @@ import {
 import { inject, injectable } from '@needle-di/core';
 import { and, asc, desc, eq } from 'drizzle-orm';
 
+import { opentelemetry } from '../utils/opentelemetry.decorator';
+
 @injectable()
+@opentelemetry()
 export class FlowRepository extends DbRepository {
   constructor(dbService = inject(DbService)) {
     super(dbService);

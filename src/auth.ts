@@ -1,4 +1,4 @@
-import { db } from '$lib/server/api/api';
+import { dbService } from '$lib/server/api/api';
 import {
   accountTable,
   sessionTable,
@@ -10,7 +10,7 @@ import { SvelteKitAuth } from '@auth/sveltekit';
 import Google from '@auth/sveltekit/providers/google';
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
-  adapter: DrizzleAdapter(db, {
+  adapter: DrizzleAdapter(dbService.db, {
     accountsTable: accountTable,
     sessionsTable: sessionTable,
     usersTable: userTable,

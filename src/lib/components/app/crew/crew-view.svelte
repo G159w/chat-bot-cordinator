@@ -2,8 +2,8 @@
   import type { CrewWithAgentsGetResponse } from '$lib/type';
   import type { Infer, SuperValidated } from 'sveltekit-superforms';
 
-  import CrewOverview from '$lib/components/app/crew/crew-overview.svelte';
-  import DeleteCrew from '$lib/components/app/crew/delete-crew.svelte';
+  import CrewOverview from '$lib/components/app/crew/crew-overview/crew-overview.svelte';
+  import DeleteCrew from '$lib/components/app/crew/crew-overview/delete-crew.svelte';
   import { Button } from '$lib/components/ui/button';
   import Card from '$lib/components/ui/card/card.svelte';
   import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
@@ -14,7 +14,7 @@
   import { SvelteFlowProvider } from '@xyflow/svelte';
   import { fade } from 'svelte/transition';
 
-  import type { UpsertAgentSchema } from './upsert-agent.schema';
+  import type { UpsertAgentSchema } from './crew-overview/upsert-agent.schema';
 
   type Props = {
     crew: CrewWithAgentsGetResponse;
