@@ -1,14 +1,15 @@
+import { DbService } from '$server/db/db.service';
+import * as schema from '$server/db/schema';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle, PgliteDatabase } from 'drizzle-orm/pglite';
 import { ConsoleTransport, LogLayer } from 'loglayer';
 
-import { DbService } from '../db/db.service';
-import * as schema from '../db/schema';
-
 export class TestDbService extends DbService<PgliteDatabase<typeof schema>> {
   constructor() {
     const pglite = new PGlite();
-    const db = drizzle(pglite, { schema });
+    // Don't know why drizzle type is not working here
+    // @ts-expect-error - client: pglite is not typed correctly
+    const db = drizzle({ client: pglite, schema: schema }) as PgliteDatabase<typeof schema>;
 
     super(db);
   }

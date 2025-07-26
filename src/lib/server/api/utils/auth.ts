@@ -1,9 +1,8 @@
+import { Logger } from '$server/api/logger';
+import { UserRepository } from '$server/api/user/user.repository';
+import { Unauthorized } from '$server/api/utils/exceptions';
 import { inject, injectable } from '@needle-di/core';
 import { Elysia } from 'elysia';
-
-import { Logger } from '../logger';
-import { UserRepository } from '../user/user.repository';
-import { Unauthorized } from './exceptions';
 
 @injectable()
 export class AuthGuard {

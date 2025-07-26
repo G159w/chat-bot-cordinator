@@ -1,3 +1,3 @@
-import { createTestApp } from './helpers';
+import { createTestApp } from '$server/test/helpers';
 
 export const testingModule = await createTestApp();

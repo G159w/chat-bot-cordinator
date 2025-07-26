@@ -1,9 +1,5 @@
-import { inject, injectable } from '@needle-di/core';
-import { t } from 'elysia';
+import type { AuthGuardedApp } from '$server/api/api';
 
-import type { AuthGuardedApp } from '../api';
-
-import { errorSchema, failShouldNotHappen } from '../utils/exceptions';
 import {
   createCrewRequestSchema,
   crewIdParamSchema,
@@ -11,8 +7,11 @@ import {
   crewResponseSchema,
   crewWithAgentsResponseSchema,
   updateCrewRequestSchema
-} from './crew.dto';
-import { CrewService } from './crew.service';
+} from '$server/api/crew/crew.dto';
+import { CrewService } from '$server/api/crew/crew.service';
+import { errorSchema, failShouldNotHappen } from '$server/api/utils/exceptions';
+import { inject, injectable } from '@needle-di/core';
+import { t } from 'elysia';
 
 @injectable()
 export class CrewController {

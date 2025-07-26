@@ -2,11 +2,10 @@ import type { Agent, Crew } from '$lib/server/db/schema';
 
 import { DbRepository, DbService } from '$lib/server/db/db.service';
 import { agentTable, crewTable, crewUpdateSchema } from '$lib/server/db/schema';
+import { opentelemetry } from '$server/api/utils/opentelemetry.decorator';
 import { inject, injectable } from '@needle-di/core';
 import { Value } from '@sinclair/typebox/value';
 import { and, eq } from 'drizzle-orm';
-
-import { opentelemetry } from '../utils/opentelemetry.decorator';
 
 @injectable()
 @opentelemetry()

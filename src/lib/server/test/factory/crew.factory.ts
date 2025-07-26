@@ -1,10 +1,9 @@
-import { faker } from '@faker-js/faker';
+import type { UserFactory } from '$server/test/factory/user.factory';
 
-import type { UserFactory } from './user.factory';
-
-import * as schema from '../../db/schema';
+import * as schema from '$server/db/schema';
 // Types for crew factory
-import { TestDbService } from '../mock.service';
+import { TestDbService } from '$server/test/mock.service';
+import { faker } from '@faker-js/faker';
 
 export interface CreateAgentData {
   description?: string;

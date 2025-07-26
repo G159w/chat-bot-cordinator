@@ -1,10 +1,9 @@
+import type { AuthGuardedApp } from '$server/api/api';
+
 import { StatusCodes } from '$lib/utils/status-codes';
+import { Logger } from '$server/api/logger';
 import { inject, injectable } from '@needle-di/core';
 import { type Static, t } from 'elysia';
-
-import type { AuthGuardedApp } from '../api';
-
-import { Logger } from '../logger';
 
 export type ErrorSchema<T extends string, C extends number> = Static<
   ReturnType<typeof errorSchema<T, C>>

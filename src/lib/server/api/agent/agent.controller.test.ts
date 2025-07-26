@@ -1,9 +1,8 @@
 import { agentTable } from '$lib/server/db/schema';
 import { testingModule } from '$lib/server/test/setup';
+import { createAuthenticatedRequest } from '$server/test/helpers';
 import { describe, expect, it } from 'bun:test';
 import { eq } from 'drizzle-orm';
-
-import { createAuthenticatedRequest } from '../../test/helpers';
 
 describe('Agent Controller', () => {
   const { agentFactory, apiClient, crewFactory, db, userFactory } = testingModule;

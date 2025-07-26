@@ -1,10 +1,9 @@
+import { ApiController } from '$server/api/api.controller';
+import { AuthGuard } from '$server/api/utils/auth';
+import { DbService, PgDbService } from '$server/db/db.service';
 import { treaty } from '@elysiajs/eden';
 import { Container } from '@needle-di/core';
 import { Elysia } from 'elysia';
-
-import { DbService, PgDbService } from '../db/db.service';
-import { ApiController } from './api.controller';
-import { AuthGuard } from './utils/auth';
 
 const container = new Container().bind({
   provide: DbService,

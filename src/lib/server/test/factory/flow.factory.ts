@@ -1,11 +1,10 @@
-import { faker } from '@faker-js/faker';
+import type { UserFactory } from '$server/test/factory/user.factory';
 
-import type { UserFactory } from './user.factory';
-
-import * as schema from '../../db/schema';
+import * as schema from '$server/db/schema';
+import { CrewFactory } from '$server/test/factory/crew.factory';
 // Types for flow factory
-import { TestDbService } from '../mock.service';
-import { CrewFactory } from './crew.factory';
+import { TestDbService } from '$server/test/mock.service';
+import { faker } from '@faker-js/faker';
 
 export interface CreateFlowData {
   crewId: string;

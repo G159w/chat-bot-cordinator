@@ -1,8 +1,8 @@
-import { TestDbService } from '../mock.service';
-import { AgentFactory } from './agent.factory';
-import { CrewFactory } from './crew.factory';
-import { FlowFactory } from './flow.factory';
-import { UserFactory } from './user.factory';
+import { AgentFactory } from '$server/test/factory/agent.factory';
+import { CrewFactory } from '$server/test/factory/crew.factory';
+import { FlowFactory } from '$server/test/factory/flow.factory';
+import { UserFactory } from '$server/test/factory/user.factory';
+import { TestDbService } from '$server/test/mock.service';
 
 export const generateFactories = (dbService: TestDbService) => {
   const userFactory = new UserFactory(dbService);

@@ -1,6 +1,7 @@
 import { includeIgnoreFile } from '@eslint/compat';
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
+import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import perfectionist from 'eslint-plugin-perfectionist';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import svelte from 'eslint-plugin-svelte';
@@ -21,6 +22,18 @@ export default ts.config(
   prettier,
   ...svelte.configs.prettier,
   eslintPluginPrettierRecommended,
+  {
+    files: ['**/server/**/*.ts'],
+    plugins: {
+      'no-relative-import-paths': noRelativeImportPaths
+    },
+    rules: {
+      'no-relative-import-paths/no-relative-import-paths': [
+        'warn',
+        { prefix: '$server', rootDir: 'src/lib/server' }
+      ]
+    }
+  },
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node }

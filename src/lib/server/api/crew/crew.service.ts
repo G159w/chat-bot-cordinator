@@ -1,11 +1,10 @@
 import type { Agent, Crew } from '$lib/server/db/schema';
 
+import { AgentRepository } from '$server/api/agent/agent.repository';
+import { CrewRepository } from '$server/api/crew/crew.repository';
+import { opentelemetry } from '$server/api/utils/opentelemetry.decorator';
 import { inject, injectable } from '@needle-di/core';
 import { err, ok, Result } from 'neverthrow';
-
-import { AgentRepository } from '../agent/agent.repository';
-import { opentelemetry } from '../utils/opentelemetry.decorator';
-import { CrewRepository } from './crew.repository';
 
 // Type for creating an agent that matches the DTO
 type CreateAgentData = {

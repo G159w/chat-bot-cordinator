@@ -1,16 +1,15 @@
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 
 import { env } from '$env/dynamic/private';
+import * as schema from '$server/db/schema';
 import { record } from '@elysiajs/opentelemetry';
 import { inject } from '@needle-di/core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool, type QueryArrayResult } from 'pg';
 
-import * as schema from './schema';
-
 export abstract class DbRepository {
-  public db: NodePgDatabase<Record<string, never>> | PgliteDatabase<typeof schema>;
+  public db: NodePgDatabase<typeof schema> | PgliteDatabase<typeof schema>;
 
   constructor(protected readonly dbService = inject(DbService)) {
     this.db = dbService.db;
@@ -18,7 +17,7 @@ export abstract class DbRepository {
 }
 
 export abstract class DbService<
-  T extends NodePgDatabase<Record<string, never>> | PgliteDatabase<typeof schema>
+  T extends NodePgDatabase<typeof schema> | PgliteDatabase<typeof schema>
 > {
   db: T;
 
@@ -27,7 +26,7 @@ export abstract class DbService<
   }
 }
 
-export class PgDbService extends DbService<NodePgDatabase<Record<string, never>>> {
+export class PgDbService extends DbService<NodePgDatabase<typeof schema>> {
   constructor() {
     const pool = new Pool({
       connectionString: env.DATABASE_URL,
@@ -46,7 +45,8 @@ export class PgDbService extends DbService<NodePgDatabase<Record<string, never>>
       });
     };
 
-    const db = drizzle({ client: pool });
+    // @ts-expect-error - client: pool is not typed correctly
+    const db = drizzle({ client: pool, schema }) as NodePgDatabase<typeof schema>;
 
     super(db);
   }

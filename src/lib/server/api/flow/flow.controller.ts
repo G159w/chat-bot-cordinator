@@ -1,10 +1,6 @@
-import { inject, injectable } from '@needle-di/core';
-import { t } from 'elysia';
+import type { AuthGuardedApp } from '$server/api/api';
 
-import type { AuthGuardedApp } from '../api';
-
-import { crewIdParamSchema } from '../crew/crew.dto';
-import { errorSchema, failShouldNotHappen } from '../utils/exceptions';
+import { crewIdParamSchema } from '$server/api/crew/crew.dto';
 import {
   createFlowRequestSchema,
   createTaskRequestSchema,
@@ -17,8 +13,11 @@ import {
   flowResponseSchema,
   taskIdParamSchema,
   taskResponseSchema
-} from './flow.dto';
-import { FlowService } from './flow.service';
+} from '$server/api/flow/flow.dto';
+import { FlowService } from '$server/api/flow/flow.service';
+import { errorSchema, failShouldNotHappen } from '$server/api/utils/exceptions';
+import { inject, injectable } from '@needle-di/core';
+import { t } from 'elysia';
 
 @injectable()
 export class FlowController {

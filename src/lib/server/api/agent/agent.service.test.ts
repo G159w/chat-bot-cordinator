@@ -1,9 +1,8 @@
 import type { Agent } from '$lib/server/db/schema';
 
 import { testingModule } from '$lib/server/test/setup';
+import { AgentService } from '$server/api/agent/agent.service';
 import { describe, expect, it } from 'bun:test';
-
-import { AgentService } from './agent.service';
 
 describe('AgentService', () => {
   const { agentFactory, container, crewFactory, userFactory } = testingModule;

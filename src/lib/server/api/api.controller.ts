@@ -1,43 +1,17 @@
 import { env } from '$env/dynamic/private';
+import { AgentController } from '$server/api/agent/agent.controller';
+import { CrewController } from '$server/api/crew/crew.controller';
+import { FlowController } from '$server/api/flow/flow.controller';
+import { Logger } from '$server/api/logger';
+import { AuthGuard } from '$server/api/utils/auth';
+import { HttpErrorHandler } from '$server/api/utils/exceptions';
 import { opentelemetry } from '@elysiajs/opentelemetry';
 import { serverTiming } from '@elysiajs/server-timing';
 import swagger from '@elysiajs/swagger';
 import { inject, injectable } from '@needle-di/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { Elysia } from 'elysia';
-
-import { AgentController } from './agent/agent.controller';
-import { CrewController } from './crew/crew.controller';
-import { FlowController } from './flow/flow.controller';
-import { Logger } from './logger';
-import { AuthGuard } from './utils/auth';
-import { HttpErrorHandler } from './utils/exceptions';
-
-// Initialize PostgreSQL instrumentation
-const pgInstrumentation = new PgInstrumentation({
-  enhancedDatabaseReporting: true,
-  // Add custom attributes to request spans
-  requestHook: (span, request) => {
-    if (request && 'text' in request && typeof request.text === 'string') {
-      // Add the SQL query as an attribute (be careful with sensitive data)
-      span.setAttribute('db.statement', request.text);
-    }
-  },
-  // Add custom attributes to spans
-  responseHook: (span, response) => {
-    if (response && 'rowCount' in response && typeof response.rowCount === 'number') {
-      span.setAttribute('db.rows_affected', response.rowCount);
-    }
-  }
-});
-
-// Register PostgreSQL instrumentation
-registerInstrumentations({
-  instrumentations: [pgInstrumentation]
-});
 
 @injectable()
 export class ApiController {

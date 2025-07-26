@@ -1,7 +1,6 @@
 import { testingModule } from '$lib/server/test/setup';
+import { createAuthenticatedRequest } from '$server/test/helpers';
 import { describe, expect, it } from 'bun:test';
-
-import { createAuthenticatedRequest } from '../../test/helpers';
 
 describe('Crew Controller', () => {
   const { agentFactory, apiClient, crewFactory, userFactory } = testingModule;

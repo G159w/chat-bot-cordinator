@@ -1,7 +1,6 @@
 import { testingModule } from '$lib/server/test/setup';
+import { FlowService } from '$server/api/flow/flow.service';
 import { describe, expect, it } from 'bun:test';
-
-import { FlowService } from './flow.service';
 
 describe('FlowService', () => {
   const { container, crewFactory, flowFactory, userFactory } = testingModule;

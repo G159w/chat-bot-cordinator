@@ -20,10 +20,9 @@ import {
   taskOutputTable,
   taskTable
 } from '$lib/server/db/schema';
+import { opentelemetry } from '$server/api/utils/opentelemetry.decorator';
 import { inject, injectable } from '@needle-di/core';
 import { and, asc, desc, eq } from 'drizzle-orm';
-
-import { opentelemetry } from '../utils/opentelemetry.decorator';
 
 @injectable()
 @opentelemetry()

@@ -10,6 +10,9 @@ const config = {
   },
   kit: {
     adapter: adapter(),
+    alias: {
+      $server: 'src/lib/server'
+    },
     experimental: {
       remoteFunctions: true
     },

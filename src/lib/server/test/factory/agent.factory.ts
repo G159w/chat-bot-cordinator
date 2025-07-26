@@ -1,8 +1,7 @@
-import { faker } from '@faker-js/faker';
-
-import * as schema from '../../db/schema';
+import * as schema from '$server/db/schema';
 // Types for agent factory
-import { TestDbService } from '../mock.service';
+import { TestDbService } from '$server/test/mock.service';
+import { faker } from '@faker-js/faker';
 
 export type Agent = typeof schema.agentTable.$inferSelect;
 

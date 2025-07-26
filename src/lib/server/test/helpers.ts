@@ -1,12 +1,11 @@
+import { ApiController } from '$server/api/api.controller';
+import { Logger } from '$server/api/logger';
+import { DbService } from '$server/db/db.service';
+import { generateFactories } from '$server/test/factory/generate-factories';
+import { TestDbService, TestLogger } from '$server/test/mock.service';
 import { treaty } from '@elysiajs/eden';
 import { Container } from '@needle-di/core';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-
-import { ApiController } from '../api/api.controller';
-import { Logger } from '../api/logger';
-import { DbService } from '../db/db.service';
-import { generateFactories } from './factory/generate-factories';
-import { TestDbService, TestLogger } from './mock.service';
 
 // Mock the database module for testing
 export const createTestApp = async () => {

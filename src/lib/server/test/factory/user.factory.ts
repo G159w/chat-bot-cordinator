@@ -1,7 +1,6 @@
+import * as schema from '$server/db/schema';
+import { TestDbService } from '$server/test/mock.service';
 import { faker } from '@faker-js/faker';
-
-import * as schema from '../../db/schema';
-import { TestDbService } from '../mock.service';
 
 export interface CreateUserData {
   email?: string;

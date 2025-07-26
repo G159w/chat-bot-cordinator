@@ -1,9 +1,8 @@
 import { DbRepository, DbService } from '$lib/server/db/db.service';
 import * as schema from '$lib/server/db/schema';
+import { opentelemetry } from '$server/api/utils/opentelemetry.decorator';
 import { inject, injectable } from '@needle-di/core';
 import { eq } from 'drizzle-orm';
-
-import { opentelemetry } from '../utils/opentelemetry.decorator';
 
 @injectable()
 @opentelemetry()
