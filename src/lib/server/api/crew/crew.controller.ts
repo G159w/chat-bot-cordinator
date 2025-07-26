@@ -3,7 +3,7 @@ import { t } from 'elysia';
 
 import type { AuthGuardedApp } from '../api';
 
-import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
+import { errorSchema, failShouldNotHappen } from '../utils/exceptions';
 import {
   createCrewRequestSchema,
   crewIdParamSchema,
@@ -50,14 +50,14 @@ export class CrewController {
       )
       .get(
         '/crews/:id',
-        async ({ params, user }) => {
+        async ({ params, status, user }) => {
           const result = await this.crewService.getCrewById(params.id, user.id);
           return result.match(
             (crew) => crew,
             (error) => {
               switch (error) {
                 case 'CREW_NOT_FOUND':
-                  throw NotFound('Crew not found');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -74,20 +74,20 @@ export class CrewController {
           params: crewIdParamSchema,
           response: {
             200: crewResponseSchema,
-            404: errorSchema('CREW_NOT_FOUND')
+            404: errorSchema('CREW_NOT_FOUND', 404)
           }
         }
       )
       .get(
         '/crews/:id/with-agents',
-        async ({ params, user }) => {
+        async ({ params, status, user }) => {
           const result = await this.crewService.getCrewWithAgents(params.id, user.id);
           return result.match(
             (crew) => crew,
             (error) => {
               switch (error) {
                 case 'CREW_NOT_FOUND':
-                  throw NotFound('Crew not found');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -104,20 +104,20 @@ export class CrewController {
           params: crewIdParamSchema,
           response: {
             200: crewWithAgentsResponseSchema,
-            404: errorSchema('CREW_NOT_FOUND')
+            404: errorSchema('CREW_NOT_FOUND', 404)
           }
         }
       )
       .post(
         '/crews',
-        async ({ body, user }) => {
+        async ({ body, status, user }) => {
           const result = await this.crewService.createCrew(user.id, body);
           return result.match(
             (crew) => crew,
             (error) => {
               switch (error) {
                 case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR':
-                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR');
+                  return status(400, { code: 400, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -134,20 +134,20 @@ export class CrewController {
           },
           response: {
             200: crewResponseSchema,
-            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR')
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR', 400)
           }
         }
       )
       .put(
         '/crews/:id',
-        async ({ body, params, user }) => {
+        async ({ body, params, status, user }) => {
           const result = await this.crewService.updateCrew(params.id, user.id, body);
           return result.match(
             (crew) => crew,
             (error) => {
               switch (error) {
                 case 'CREW_NOT_FOUND':
-                  throw NotFound('Crew not found');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -165,20 +165,20 @@ export class CrewController {
           params: crewIdParamSchema,
           response: {
             200: crewResponseSchema,
-            404: errorSchema('CREW_NOT_FOUND')
+            404: errorSchema('CREW_NOT_FOUND', 404)
           }
         }
       )
       .delete(
         '/crews/:id',
-        async ({ params, user }) => {
+        async ({ params, status, user }) => {
           const result = await this.crewService.deleteCrew(params.id, user.id);
           return result.match(
             (success) => success,
             (error) => {
               switch (error) {
                 case 'CREW_NOT_FOUND':
-                  throw NotFound('CREW_NOT_FOUND');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -195,7 +195,7 @@ export class CrewController {
           params: crewIdParamSchema,
           response: {
             200: t.Boolean(),
-            404: errorSchema('CREW_NOT_FOUND')
+            404: errorSchema('CREW_NOT_FOUND', 404)
           }
         }
       );

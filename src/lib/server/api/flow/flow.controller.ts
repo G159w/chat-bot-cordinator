@@ -4,7 +4,7 @@ import { t } from 'elysia';
 import type { AuthGuardedApp } from '../api';
 
 import { crewIdParamSchema } from '../crew/crew.dto';
-import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
+import { errorSchema, failShouldNotHappen } from '../utils/exceptions';
 import {
   createFlowRequestSchema,
   createTaskRequestSchema,
@@ -32,18 +32,24 @@ export class FlowController {
         // Flow execution endpoints
         .post(
           '/flows/execute',
-          async ({ body, user }) => {
+          async ({ body, status, user }) => {
             const result = await this.flowService.executeFlow(user.id, body);
             return result.match(
               (execution) => execution,
               (error) => {
                 switch (error) {
-                  case 'FLOW_NOT_FOUND':
-                    throw NotFound('FLOW_NOT_FOUND');
                   case 'FLOW_INACTIVE':
-                    throw BadRequest('FLOW_INACTIVE');
+                    return status(400, {
+                      code: 400,
+                      data: error as 'FLOW_INACTIVE' | 'NO_TASKS_FOUND_IN_FLOW'
+                    });
+                  case 'FLOW_NOT_FOUND':
+                    return status(404, { code: 404, data: error });
                   case 'NO_TASKS_FOUND_IN_FLOW':
-                    throw BadRequest('NO_TASKS_FOUND_IN_FLOW');
+                    return status(400, {
+                      code: 400,
+                      data: error as 'FLOW_INACTIVE' | 'NO_TASKS_FOUND_IN_FLOW'
+                    });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -60,21 +66,24 @@ export class FlowController {
             },
             response: {
               200: executeFlowResponseSchema,
-              400: errorSchema('FLOW_INACTIVE'),
-              404: errorSchema('FLOW_NOT_FOUND')
+              400: t.Union([
+                errorSchema('NO_TASKS_FOUND_IN_FLOW', 400),
+                errorSchema('FLOW_INACTIVE', 400)
+              ]),
+              404: errorSchema('FLOW_NOT_FOUND', 404)
             }
           }
         )
         .get(
           '/flows/executions/:id',
-          async ({ params, user }) => {
+          async ({ params, status, user }) => {
             const result = await this.flowService.getExecutionStatus(params.id, user.id);
             return result.match(
               (execution) => execution,
               (error) => {
                 switch (error) {
                   case 'FLOW_EXECUTION_NOT_FOUND':
-                    throw NotFound('FLOW_EXECUTION_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -91,20 +100,20 @@ export class FlowController {
             params: flowExecutionIdParamSchema,
             response: {
               200: flowExecutionResponseUnionSchema,
-              404: errorSchema('FLOW_EXECUTION_NOT_FOUND')
+              404: errorSchema('FLOW_EXECUTION_NOT_FOUND', 404)
             }
           }
         )
         .get(
           '/flows/executions/:id/details',
-          async ({ params, user }) => {
+          async ({ params, status, user }) => {
             const result = await this.flowService.getExecutionWithDetails(params.id, user.id);
             return result.match(
               (details) => details,
               (error) => {
                 switch (error) {
                   case 'FLOW_EXECUTION_NOT_FOUND':
-                    throw NotFound('FLOW_EXECUTION_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -121,21 +130,21 @@ export class FlowController {
             params: flowExecutionIdParamSchema,
             response: {
               200: flowExecutionWithDetailsResponseUnionSchema,
-              404: errorSchema('FLOW_EXECUTION_NOT_FOUND')
+              404: errorSchema('FLOW_EXECUTION_NOT_FOUND', 404)
             }
           }
         )
         // Flow management endpoints
         .post(
           '/flows',
-          async ({ body, user }) => {
+          async ({ body, status, user }) => {
             const result = await this.flowService.createFlow(user.id, body);
             return result.match(
               (flow) => flow,
               (error) => {
                 switch (error) {
                   case 'CREW_NOT_FOUND':
-                    throw NotFound('CREW_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -151,7 +160,7 @@ export class FlowController {
             },
             response: {
               200: flowResponseSchema,
-              404: errorSchema('CREW_NOT_FOUND')
+              404: errorSchema('CREW_NOT_FOUND', 404)
             }
           }
         )
@@ -175,14 +184,14 @@ export class FlowController {
         )
         .put(
           '/flows/:id',
-          async ({ body, params, user }) => {
+          async ({ body, params, status, user }) => {
             const result = await this.flowService.updateFlow(params.id, user.id, body);
             return result.match(
               (flow) => flow,
               (error) => {
                 switch (error) {
                   case 'FLOW_NOT_FOUND':
-                    throw NotFound('FLOW_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -203,20 +212,20 @@ export class FlowController {
             params: flowIdParamSchema,
             response: {
               200: flowResponseSchema,
-              404: errorSchema('FLOW_NOT_FOUND')
+              404: errorSchema('FLOW_NOT_FOUND', 404)
             }
           }
         )
         .delete(
           '/flows/:id',
-          async ({ params, user }) => {
+          async ({ params, status, user }) => {
             const result = await this.flowService.deleteFlow(params.id, user.id);
             return result.match(
               () => ({ success: true }),
               (error) => {
                 switch (error) {
                   case 'FLOW_NOT_FOUND':
-                    throw NotFound('FLOW_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -232,21 +241,21 @@ export class FlowController {
             params: flowIdParamSchema,
             response: {
               200: t.Object({ success: t.Boolean() }),
-              404: errorSchema('FLOW_NOT_FOUND')
+              404: errorSchema('FLOW_NOT_FOUND', 404)
             }
           }
         )
         // Task management endpoints
         .post(
           '/tasks',
-          async ({ body, user }) => {
+          async ({ body, status, user }) => {
             const result = await this.flowService.createTask(user.id, body);
             return result.match(
               (task) => task,
               (error) => {
                 switch (error) {
                   case 'FLOW_NOT_FOUND':
-                    throw NotFound('FLOW_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -262,20 +271,20 @@ export class FlowController {
             },
             response: {
               200: taskResponseSchema,
-              404: errorSchema('FLOW_NOT_FOUND')
+              404: errorSchema('FLOW_NOT_FOUND', 404)
             }
           }
         )
         .get(
           '/flows/:id/tasks',
-          async ({ params, user }) => {
+          async ({ params, status, user }) => {
             const result = await this.flowService.getTasksByFlowId(params.id, user.id);
             return result.match(
               (tasks) => tasks,
               (error) => {
                 switch (error) {
                   case 'FLOW_NOT_FOUND':
-                    throw NotFound('FLOW_NOT_FOUND');
+                    return status(404, { code: 404, data: 'FLOW_NOT_FOUND' });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -291,20 +300,20 @@ export class FlowController {
             params: flowIdParamSchema,
             response: {
               200: t.Array(taskResponseSchema),
-              404: errorSchema('FLOW_NOT_FOUND')
+              404: errorSchema('FLOW_NOT_FOUND', 404)
             }
           }
         )
         .put(
           '/tasks/:id',
-          async ({ body, params }) => {
+          async ({ body, params, status }) => {
             const result = await this.flowService.updateTask(params.id, body);
             return result.match(
               (task) => task,
               (error) => {
                 switch (error) {
                   case 'TASK_NOT_FOUND':
-                    throw NotFound('TASK_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -327,20 +336,20 @@ export class FlowController {
             params: taskIdParamSchema,
             response: {
               200: taskResponseSchema,
-              404: errorSchema('TASK_NOT_FOUND')
+              404: errorSchema('TASK_NOT_FOUND', 404)
             }
           }
         )
         .delete(
           '/tasks/:id',
-          async ({ params }) => {
+          async ({ params, status }) => {
             const result = await this.flowService.deleteTask(params.id);
             return result.match(
               () => ({ success: true }),
               (error) => {
                 switch (error) {
                   case 'TASK_NOT_FOUND':
-                    throw NotFound('TASK_NOT_FOUND');
+                    return status(404, { code: 404, data: error });
                   default:
                     throw failShouldNotHappen();
                 }
@@ -356,7 +365,7 @@ export class FlowController {
             params: taskIdParamSchema,
             response: {
               200: t.Object({ success: t.Boolean() }),
-              404: errorSchema('TASK_NOT_FOUND')
+              404: errorSchema('TASK_NOT_FOUND', 404)
             }
           }
         )

@@ -1,10 +1,14 @@
 import { StatusCodes } from '$lib/utils/status-codes';
 import { inject, injectable } from '@needle-di/core';
-import { t } from 'elysia';
+import { type Static, t } from 'elysia';
 
 import type { AuthGuardedApp } from '../api';
 
 import { Logger } from '../logger';
+
+export type ErrorSchema<T extends string, C extends number> = Static<
+  ReturnType<typeof errorSchema<T, C>>
+>;
 
 export class HttpError extends Error {
   public constructor(
@@ -28,12 +32,11 @@ export function Conflict(message?: string, errorData?: unknown) {
   return new HttpError(message || 'Conflict', StatusCodes.CONFLICT, errorData);
 }
 
-export function errorSchema<T extends string>(data: T) {
+export function errorSchema<T extends string, C extends number>(data: T, code: C) {
   return t.Object({
-    code: t.Number(),
-    data: t.Union([t.TemplateLiteral(data)]),
-    error: t.Boolean(),
-    message: t.String()
+    code: t.Literal(code),
+    data: t.Literal(data),
+    message: t.Optional(t.String())
   });
 }
 
@@ -113,22 +116,23 @@ export class HttpErrorHandler {
       .error({
         ELYSIA_HTTP_ERROR: HttpError
       })
-      .onError({ as: 'global' }, function onError({ code, error, set }) {
+      .onError({ as: 'global' }, function onError({ code, error, set }): ErrorSchema<
+        'ELYSIA_HTTP_ERROR' | 'INTERNAL_SERVER_ERROR',
+        number
+      > {
         if (code === 'ELYSIA_HTTP_ERROR') {
           set.status = error.statusCode;
           logger.withMetadata(error).error(error.message);
           return {
             code: error.statusCode,
-            data: error.errorData,
-            error: true,
+            data: 'ELYSIA_HTTP_ERROR',
             message: error.message
           };
         } else {
           logger.withMetadata(error).error('Unhandled error');
           return {
             code: StatusCodes.INTERNAL_SERVER_ERROR,
-            data: error,
-            error: true,
+            data: 'INTERNAL_SERVER_ERROR',
             message: 'Internal Server Error'
           };
         }

@@ -1,9 +1,5 @@
-import { inject, injectable } from '@needle-di/core';
-import { t } from 'elysia';
+import type { AuthGuardedApp } from '$lib/server/api/api';
 
-import type { AuthGuardedApp } from '../api';
-
-import { BadRequest, errorSchema, failShouldNotHappen, NotFound } from '../utils/exceptions';
 import {
   agentIdParamSchema,
   agentListQuerySchema,
@@ -11,8 +7,11 @@ import {
   agentResponseSchema,
   createAgentRequestSchema,
   updateAgentRequestSchema
-} from './agent.dto';
-import { AgentService } from './agent.service';
+} from '$lib/server/api/agent/agent.dto';
+import { AgentService } from '$lib/server/api/agent/agent.service';
+import { errorSchema, failShouldNotHappen } from '$lib/server/api/utils/exceptions';
+import { inject, injectable } from '@needle-di/core';
+import { t } from 'elysia';
 
 @injectable()
 export class AgentController {
@@ -24,14 +23,14 @@ export class AgentController {
     return app
       .get(
         '/agents',
-        async ({ query, user }) => {
+        async ({ query, status, user }) => {
           const result = await this.agentService.listAgents(query.crewId, user.id);
           return result.match(
             (agents) => agents,
             (error) => {
               switch (error) {
                 case 'CREW_NOT_FOUND':
-                  throw NotFound('Crew not found');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -48,20 +47,20 @@ export class AgentController {
           query: agentListQuerySchema,
           response: {
             200: agentListResponseSchema,
-            404: errorSchema('CREW_NOT_FOUND')
+            404: errorSchema('CREW_NOT_FOUND', 404)
           }
         }
       )
       .post(
         '/agents',
-        async ({ body }) => {
+        async ({ body, status }) => {
           const result = await this.agentService.createAgent(body);
           return result.match(
             (agent) => agent,
             (error) => {
               switch (error) {
                 case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW':
-                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
+                  return status(400, { code: 400, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -78,22 +77,22 @@ export class AgentController {
           },
           response: {
             200: agentResponseSchema,
-            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW')
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW', 400)
           }
         }
       )
       .put(
         '/agents/:id',
-        async ({ body, params }) => {
+        async ({ body, params, status }) => {
           const result = await this.agentService.updateAgent(params.id, body);
           return result.match(
             (agent) => agent,
             (error) => {
               switch (error) {
                 case 'AGENT_NOT_FOUND':
-                  throw NotFound('Agent not found');
+                  return status(404, { code: 404, data: error });
                 case 'ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW':
-                  throw BadRequest('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW');
+                  return status(400, { code: 400, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -110,21 +109,21 @@ export class AgentController {
           params: agentIdParamSchema,
           response: {
             200: agentResponseSchema,
-            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW'),
-            404: errorSchema('AGENT_NOT_FOUND')
+            400: errorSchema('ONLY_ONE_AGENT_CAN_BE_COORDINATOR_PER_CREW', 400),
+            404: errorSchema('AGENT_NOT_FOUND', 404)
           }
         }
       )
       .delete(
         '/agents/:id',
-        async ({ params, user }) => {
+        async ({ params, status, user }) => {
           const result = await this.agentService.deleteAgent(params.id, user.id);
           return result.match(
             (success) => success,
             (error) => {
               switch (error) {
                 case 'AGENT_NOT_FOUND':
-                  throw NotFound('Agent not found');
+                  return status(404, { code: 404, data: error });
                 default:
                   throw failShouldNotHappen();
               }
@@ -140,7 +139,7 @@ export class AgentController {
           params: agentIdParamSchema,
           response: {
             200: t.Boolean(),
-            404: errorSchema('AGENT_NOT_FOUND')
+            404: errorSchema('AGENT_NOT_FOUND', 404)
           }
         }
       );
