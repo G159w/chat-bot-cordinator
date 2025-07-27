@@ -12,6 +12,7 @@ import { inject, injectable } from '@needle-di/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { Elysia } from 'elysia';
+import prometheusPlugin from 'elysia-prometheus';
 
 @injectable()
 export class ApiController {
@@ -67,6 +68,15 @@ export class ApiController {
           },
           path: '/swagger',
           theme: 'deepSpace'
+        })
+      )
+      .use(
+        prometheusPlugin({
+          dynamicLabels: {
+            userAgent: (ctx) => ctx.request.headers.get('user-agent') ?? 'unknown'
+          },
+          metricsPath: '/metrics',
+          staticLabels: { service: 'AoA' }
         })
       )
       .use(this.authGuard.useGuard())
